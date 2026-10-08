@@ -1,0 +1,67 @@
+{
+  "generated_at": "2026-10-08T21:51:15.584Z",
+  "totals": {
+    "releases": 1,
+    "assets": 3,
+    "total_downloads": 0
+  },
+  "releases": [
+    {
+      "assets": [
+        {
+          "browser_download_url": "https://github.com/thesmarter/thesmarter.github.io/releases/download/v1.0/Tijara-Customer.apk",
+          "content_type": "application/vnd.android.package-archive",
+          "created_at": "2026-10-08T21:08:13Z",
+          "digest": "sha256:4513c867d244dd275463c7182e333c15c0c75135e63703aebd264c4709cf7ffa",
+          "download_count": 0,
+          "id": 623013167,
+          "label": null,
+          "name": "Tijara-Customer.apk",
+          "size": 101510612
+        },
+        {
+          "browser_download_url": "https://github.com/thesmarter/thesmarter.github.io/releases/download/v1.0/Tijara-Driver.apk",
+          "content_type": "application/vnd.android.package-archive",
+          "created_at": "2026-10-08T21:13:51Z",
+          "digest": "sha256:d4a13ab3e0c1ac361d6567329aaa83ee2e658ef02ae82b332dcea40324ca950c",
+          "download_count": 0,
+          "id": 623025596,
+          "label": null,
+          "name": "Tijara-Driver.apk",
+          "size": 95881119
+        },
+        {
+          "browser_download_url": "https://github.com/thesmarter/thesmarter.github.io/releases/download/v1.0/Tijara-Merchant.apk",
+          "content_type": "application/vnd.android.package-archive",
+          "created_at": "2026-10-08T21:18:54Z",
+          "digest": "sha256:51fa0a60cd452326e8e5e8198fc5f66065c0dd4ab2f058d93ac2dc25c286ff41",
+          "download_count": 0,
+          "id": 623037401,
+          "label": null,
+          "name": "Tijara-Merchant.apk",
+          "size": 63954114
+        }
+      ],
+      "author": {
+        "avatar_url": "https://avatars.githubusercontent.com/u/9208109?v=4",
+        "html_url": "https://github.com/Tayeb-Ali",
+        "login": "Tayeb-Ali"
+      },
+      "body": "## تجارة Tijara — نسخة أندرويد 1.0.1\n\nمنصة تجارة إلكترونية متعددة البائعين — 3 تطبيقات:\n\n| التطبيق | الملف | الوظيفة |\n|---|---|---|\n| 🛍️ تجارة (الزبائن) | `Tijara-Customer.apk` | تسوق، سلة، طلبات، تتبع |\n| 🏪 تجارة تاجر (التجار) | `Tijara-Merchant.apk` | لوحة تحكم المتجر، الطلبات، المنتجات، التقارير |\n| 🛵 تجارة سائق (السائقون) | `Tijara-Driver.apk` | استلام التوصيلات وتسليمها |\n\n### التثبيت\n1. نزّل ملف APK المناسب لجهازك الأندرويد.\n2. افتحه ووافق على \"التثبيت من مصادر غير معروفة\" عند الطلب.\n3. اسم التطبيق يظهر بالعربية (تجارة…) على الأجهزة العربية وبالإنجليزية (Tijara…) غيرها.\n\n### حسابات تجريبية\n- زبون: `user@smart.sd` / `123123`\n- تاجر: `store@smart.sd` / `123123`\n- سائق (رقم الهاتف): `01551961996` / `123123`\n\n### الجديد في هذه النسخة\n- شريط سفلي متحرك عصري، ودعم كامل للعربية (RTL) والوضع الليلي.\n- حفظ تسجيل الدخول بعد إغلاق التطبيق.\n- إصلاحات سرعة جلب البيانات والإسناد التلقائي للسائقين.",
+      "created_at": "2024-12-02T12:05:58Z",
+      "full_name": "thesmarter/thesmarter.github.io",
+      "html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0",
+      "id": 407264726,
+      "name": "Tijara Apps",
+      "org": "thesmarter",
+      "prerelease": false,
+      "published_at": "2026-10-08T21:22:40Z",
+      "repo": "thesmarter.github.io",
+      "slug": "thesmarter-thesmarter-github-io-v1-0",
+      "tag_name": "v1.0",
+      "tarball_url": "https://api.github.com/repos/thesmarter/thesmarter.github.io/tarball/v1.0",
+      "updated_at": "2026-10-08T21:22:40Z",
+      "zipball_url": "https://api.github.com/repos/thesmarter/thesmarter.github.io/zipball/v1.0"
+    }
+  ]
+}

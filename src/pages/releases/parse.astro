@@ -1,0 +1,201 @@
+---
+/**
+ * /releases/parse/ — interactive release-URL parser tool page.
+ * Indexed tool page (no noindex): hero + big <ReleaseParser/> + 3-step
+ * how-it-works + URL format help. Honors ?url= on load.
+ * Contracts: Base { title, description, canonical, ogImage, jsonLd, noindex },
+ * ReleaseParser (no props).
+ */
+import Base from "../../layouts/Base.astro";
+import ReleaseParser from "../../components/ReleaseParser.astro";
+
+const SITE = "https://thesmarter.github.io";
+const CANONICAL = `${SITE}/releases/parse/`;
+const EXAMPLE_URL = "https://github.com/thesmarter/example-app/releases/tag/v2.1.0";
+
+const title = "Release Parser — Paste Any Release URL | Smart Team";
+const description =
+  "Paste any GitHub release URL and fetch its APKs, binaries, and source archives live via the public GitHub API. No login, no install — paste, fetch, download.";
+
+const toolJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  name: "Smart Team Release Parser",
+  url: CANONICAL,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: "Any",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+  description,
+};
+
+const steps = [
+  {
+    n: "01",
+    key: "PASTE_URL",
+    accent: "#00ff88",
+    text: "Drop any release link — github.com/{org}/{repo}/releases/tag/{tag} — into the box below, or open this page with ?url= pre-filled.",
+  },
+  {
+    n: "02",
+    key: "FETCH_API",
+    accent: "#00d4ff",
+    text: "The parser queries the public GitHub Releases API straight from your browser. No server, no login, no rate-limit surprises for casual use.",
+  },
+  {
+    n: "03",
+    key: "DOWNLOAD",
+    accent: "#ff00ff",
+    text: "Pick your file — APK, binary, checksum, or full source archive — and download it directly from GitHub's CDN.",
+  },
+];
+---
+
+<Base
+  title={title}
+  description={description}
+  canonical={CANONICAL}
+  ogImage={`${SITE}/og/default.png`}
+  jsonLd={toolJsonLd}
+>
+  <div class="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+    <nav aria-label="Breadcrumb" class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-neon">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/releases/" class="hover:text-neon">Releases</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-neon">Parse</li>
+      </ol>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <section class="py-12 md:py-16" aria-labelledby="parse-title">
+      <p class="section-label terminal-prefix">// RELEASE_PARSER</p>
+      <h1 id="parse-title" class="mt-4 text-5xl font-black uppercase leading-none tracking-widest md:text-7xl">
+        <span class="cyber-glitch" data-text="PASTE. FETCH. DOWNLOAD.">PASTE. FETCH. DOWNLOAD.</span>
+      </h1>
+      <p class="mt-6 max-w-2xl leading-relaxed text-fg/85">
+        Point this tool at <strong class="text-fg">any public GitHub release</strong> —
+        even one that is not on our shelf yet — and pull its files live.
+        Nothing is uploaded anywhere; your browser talks to the GitHub API directly.
+      </p>
+      <p id="parse-active-url" hidden class="mt-4 border border-cyan/40 bg-card p-4 font-mono text-xs leading-relaxed text-cyan" role="status">
+        $ INCOMING_URL :: <span data-active-url class="break-all" dir="ltr"></span>
+      </p>
+    </section>
+
+    <!-- ================= PARSER (BIG) ================= -->
+    <section id="tool" class="scroll-mt-24" aria-labelledby="tool-title">
+      <h2 id="tool-title" class="sr-only">Release URL parser</h2>
+      <ReleaseParser />
+    </section>
+
+    <!-- ================= HOW IT WORKS ================= -->
+    <section class="py-16 md:py-24" aria-labelledby="how-title">
+      <p class="section-label terminal-prefix">FLOW // 3_STEPS</p>
+      <h2 id="how-title" class="mt-4 text-4xl font-bold uppercase md:text-5xl">
+        How it <span class="text-neon glow">works</span>
+      </h2>
+      <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {steps.map((s) => (
+          <article
+            class="cyber-chamfer border bg-bg p-6 transition hover:-translate-y-1"
+            style={`border-color: ${s.accent}55`}
+            aria-label={s.key}
+          >
+            <p class="font-accent text-[0.7rem] uppercase tracking-[0.25em]" style={`color: ${s.accent}`}>{s.n} // {s.key}</p>
+            <h3 class="mt-2 font-display text-2xl font-bold uppercase">{s.key.replace("_", " ")}</h3>
+            <p class="mt-4 text-sm leading-relaxed text-fg/85">{s.text}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <!-- ================= URL FORMAT HELP ================= -->
+    <section aria-labelledby="format-title" class="border border-border bg-card/60 p-5 sm:p-8">
+      <p class="section-label terminal-prefix">FORMAT // EXPECTED_INPUT</p>
+      <h2 id="format-title" class="mt-2 text-3xl font-bold uppercase md:text-4xl">
+        URL format<span aria-hidden="true" class="text-cyan">_</span>
+      </h2>
+      <p class="mt-4 max-w-3xl text-sm leading-relaxed text-fg/85">
+        The parser expects a standard GitHub release-tag URL:
+      </p>
+      <div class="cyber-chamfer mt-4 border border-border bg-bg" aria-label="Expected URL pattern">
+        <div class="border-b border-border px-5 py-2 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">
+          pattern // tag page
+        </div>
+        <pre class="overflow-x-auto p-5 font-mono text-xs leading-loose md:text-sm"><code><span class="text-muted-fg">https://github.com/</span><span class="text-neon">&#123;org&#125;</span><span class="text-muted-fg">/</span><span class="text-cyan">&#123;repo&#125;</span><span class="text-muted-fg">/releases/tag/</span><span class="text-magenta">&#123;tag&#125;</span></code></pre>
+      </div>
+      <div class="mt-4 grid grid-cols-1 gap-4 font-mono text-xs leading-relaxed lg:grid-cols-2">
+        <div class="border border-neon/30 bg-bg p-4">
+          <p class="uppercase tracking-[0.2em] text-neon">✓ VALID</p>
+          <p class="mt-2 break-all text-fg/85" dir="ltr">{EXAMPLE_URL}</p>
+          <a
+            href={`/releases/parse/?url=${encodeURIComponent(EXAMPLE_URL)}`}
+            class="mt-3 inline-flex min-h-[44px] items-center font-accent text-xs uppercase tracking-[0.2em] text-cyan hover:text-neon"
+          >Try this example →</a>
+        </div>
+        <div class="border border-danger/40 bg-bg p-4">
+          <p class="uppercase tracking-[0.2em] text-danger">✗ NOT_YET</p>
+          <p class="mt-2 break-all text-fg/85" dir="ltr">https://github.com/&#123;org&#125;/&#123;repo&#125;/releases <span class="text-muted-fg">(list page, no tag)</span></p>
+          <p class="mt-2 text-muted-fg">Open the release first, then copy the URL with <code class="text-fg">/tag/…</code> in it.</p>
+        </div>
+      </div>
+      <div class="mt-6 border-t border-border pt-4 font-mono text-xs leading-relaxed text-muted-fg">
+        <p><span class="text-neon">$</span> DEEP_LINK :: append <code class="text-cyan" dir="ltr">?url=&#123;release-url&#125;</code> to this page to pre-fill the parser on load.</p>
+        <p class="mt-1"><span class="text-neon">$</span> SHORTCUT :: share parsed results by copying the address bar — the URL travels with it.</p>
+      </div>
+    </section>
+
+    <nav class="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-6 font-accent text-sm uppercase tracking-[0.2em]" aria-label="Parser navigation">
+      <a href="/releases/" class="inline-flex min-h-[44px] items-center text-cyan hover:text-neon">← Release shelf</a>
+      <a href="/#catalog" class="inline-flex min-h-[44px] items-center text-muted-fg hover:text-neon">Repo catalog</a>
+    </nav>
+  </div>
+
+  <script>
+    // Surface ?url= on load and hand it to <ReleaseParser/> (which owns
+    // fetching). Defensive: the parser reads the param itself; this only
+    // announces it and emits an event in case the parser listens for it.
+    (() => {
+      let incoming = "";
+      try {
+        incoming = new URLSearchParams(window.location.search).get("url") || "";
+      } catch { incoming = ""; }
+      incoming = incoming.trim();
+      if (!incoming) return;
+      const notice = document.getElementById("parse-active-url");
+      const slot = notice?.querySelector("[data-active-url]");
+      if (notice && slot) {
+        slot.textContent = incoming;
+        notice.hidden = false;
+      }
+      try {
+        document.dispatchEvent(new CustomEvent("releases:parse-url", { detail: incoming }));
+      } catch { /* older engines: parser still reads location.search itself */ }
+      // Fallback: pre-fill a matching input if the parser exposes one.
+      const input = document.querySelector(
+        '[data-release-parser-input], input[name="release-url"], input[name="url"]',
+      );
+      if (input && !input.value) {
+        input.value = incoming;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        input.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    })();
+  </script>
+</Base>
+
+<style>
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+</style>

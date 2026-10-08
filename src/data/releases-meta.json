@@ -1,0 +1,33 @@
+{
+  "generated_at": "2026-10-08T21:51:15.584Z",
+  "totals": {
+    "releases": 1,
+    "assets": 3,
+    "total_downloads": 0,
+    "repos_checked": 40,
+    "repos_with_releases": 1
+  },
+  "byOrg": {
+    "thesmarter": 1
+  },
+  "byRepo": {
+    "thesmarter/thesmarter.github.io": {
+      "releases": 1,
+      "assets": 3,
+      "downloads": 0,
+      "latest_tag": "v1.0",
+      "latest_name": "Tijara Apps",
+      "latest_published_at": "2026-10-08T21:22:40Z",
+      "latest_slug": "thesmarter-thesmarter-github-io-v1-0",
+      "latest_html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0"
+    }
+  },
+  "latest": {
+    "slug": "thesmarter-thesmarter-github-io-v1-0",
+    "full_name": "thesmarter/thesmarter.github.io",
+    "tag_name": "v1.0",
+    "name": "Tijara Apps",
+    "html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0",
+    "published_at": "2026-10-08T21:22:40Z"
+  }
+}

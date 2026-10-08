@@ -1,4 +1,5 @@
 import { projects, displayDescription } from "../lib/repos";
+import { getReleases } from "../lib/releases";
 
 const SITE = "https://thesmarter.github.io";
 
@@ -22,6 +23,14 @@ export async function GET() {
   lines.push(``);
   for (const p of repos) {
     lines.push(`- [${p.full_name}](${SITE}/repos/${p.slug}/): ${displayDescription(p)} [code](${p.html_url})`);
+  }
+  lines.push(``);
+  lines.push(`## Releases`);
+  lines.push(``);
+  lines.push(`Browse downloads at ${SITE}/releases/. Paste any GitHub release URL at ${SITE}/releases/parse/ to render it.`);
+  lines.push(``);
+  for (const r of getReleases()) {
+    lines.push(`- [${r.full_name} ${r.tag_name} — ${r.name}](${SITE}/releases/${r.slug}/): ${r.assets.length} file(s), ${r.assets.map((a) => a.name).join(", ")} [source](${r.html_url})`);
   }
   lines.push(``);
   lines.push(`## Contribute`);

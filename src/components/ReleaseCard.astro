@@ -1,0 +1,179 @@
+---
+/**
+ * ReleaseCard.astro — chamfered cyberpunk release card.
+ *
+ * props: { release }
+ * Local tolerant shape (mirrors src/lib/releases.ts without importing it,
+ * so this component renders even before that module exists).
+ */
+interface ReleaseCardAssetLite {
+  download_count?: number;
+  downloadCount?: number;
+  downloads?: number;
+}
+
+interface ReleaseCardRelease {
+  slug?: string;
+  id?: number | string;
+  tag?: string;
+  tag_name?: string;
+  tagName?: string;
+  name?: string | null;
+  title?: string | null;
+  repo?: string | null;
+  full_name?: string | null;
+  fullName?: string | null;
+  repo_full_name?: string | null;
+  org?: string | null;
+  owner?: string | { login?: string } | null;
+  body?: string | null;
+  description?: string | null;
+  published_at?: string | null;
+  publishedAt?: string | null;
+  created_at?: string | null;
+  date?: string | null;
+  prerelease?: boolean;
+  isPrerelease?: boolean;
+  draft?: boolean;
+  html_url?: string | null;
+  htmlUrl?: string | null;
+  url?: string | null;
+  assets?: ReleaseCardAssetLite[] | null;
+  downloadTotal?: number;
+  downloads?: number;
+}
+
+interface Props {
+  release: ReleaseCardRelease;
+}
+
+const { release } = Astro.props as Props;
+const r: ReleaseCardRelease = release ?? ({} as ReleaseCardRelease);
+
+// ---- normalizers (accept snake_case + camelCase) ----
+const tag: string =
+  r.tag_name ?? r.tagName ?? r.tag ?? r.slug ?? String(r.id ?? "untagged");
+const slug: string = r.slug ?? tag;
+const title: string = r.name ?? r.title ?? tag;
+const ownerLogin: string =
+  (typeof r.owner === "string" ? r.owner : r.owner?.login) ?? r.org ?? "";
+const repoFull: string =
+  r.full_name ?? r.fullName ?? r.repo_full_name ?? r.repo ??
+  (ownerLogin && title ? `${ownerLogin}/${title}` : ownerLogin || "unknown/unknown");
+const rawBody: string = r.body ?? r.description ?? "";
+const excerpt: string =
+  rawBody.length > 140 ? `${rawBody.slice(0, 140)}…` : rawBody;
+const isPrerelease: boolean = Boolean(r.prerelease ?? r.isPrerelease ?? false);
+const isDraft: boolean = Boolean(r.draft ?? false);
+const publishedRaw: string | null =
+  r.published_at ?? r.publishedAt ?? r.created_at ?? r.date ?? null;
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "DATE_UNKNOWN";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return String(iso).toUpperCase();
+  return d
+    .toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+    .toUpperCase();
+}
+const published: string = formatDate(publishedRaw);
+
+const assetList: ReleaseCardAssetLite[] = Array.isArray(r.assets) ? r.assets : [];
+const assetsCount: number = assetList.length;
+const downloadsTotal: number =
+  r.downloadTotal ??
+  r.downloads ??
+  assetList.reduce(
+    (sum, a) => sum + Number(a.download_count ?? a.downloadCount ?? a.downloads ?? 0),
+    0,
+  );
+
+const detailHref: string = `/releases/${slug}/`;
+const githubHref: string =
+  r.html_url ?? r.htmlUrl ?? r.url ?? `https://github.com/${repoFull}/releases/tag/${tag}`;
+
+const badgeState: string = isDraft ? "DRAFT" : isPrerelease ? "PRERELEASE" : "STABLE";
+const cardLabel = `Release ${tag}, ${badgeState}, repository ${repoFull}, ${downloadsTotal} downloads`;
+const viewLabel = `VIEW_RELEASE_${String(tag).toUpperCase().replace(/[^A-Z0-9]+/gi, "_")}_DETAILS`;
+const ghLabel = `VIEW_${String(tag).toUpperCase().replace(/[^A-Z0-9]+/gi, "_")}_ON_GITHUB`;
+---
+
+<article
+  aria-label={cardLabel}
+  class="cyber-chamfer relative flex min-h-full flex-col border border-[#2a2a3a] bg-[#12121a] font-mono transition-all duration-300 hover:-translate-y-1 hover:border-[#00ff88] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840]"
+>
+  <div class="flex flex-wrap items-center gap-2 p-5 pb-0">
+    <span
+      class:list={[
+        "cyber-chamfer-sm inline-flex min-h-[30px] items-center border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em]",
+        isPrerelease || isDraft
+          ? "border-[#ff00ff] bg-[#ff00ff]/10 text-[#ff00ff] shadow-[0_0_5px_#ff00ff,0_0_20px_#ff00ff60]"
+          : "border-[#00ff88] bg-[#00ff88]/10 text-[#00ff88] shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840]",
+      ]}
+      aria-label={`Tag ${tag}, ${badgeState}`}
+    >
+      {tag}
+    </span>
+    <span
+      class:list={[
+        "inline-flex min-h-[30px] items-center px-2 py-1 text-[11px] uppercase tracking-[0.2em]",
+        isPrerelease || isDraft ? "text-[#ff00ff]" : "text-[#00ff88]",
+      ]}
+      aria-hidden="true"
+    >
+      [{badgeState}]
+    </span>
+  </div>
+
+  <div class="flex flex-1 flex-col gap-3 p-5">
+    <div class="min-w-0">
+      <p class="truncate text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">
+        {repoFull}
+      </p>
+      <h3 class="mt-1 truncate font-display text-lg font-bold uppercase tracking-wide text-[#e0e0e0]">
+        {title}
+      </h3>
+    </div>
+
+    <dl class="flex flex-wrap items-center gap-x-5 gap-y-2 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0]">
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">PUB:</dt>
+        <dd><time datetime={publishedRaw ?? undefined}>{published}</time></dd>
+      </div>
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">DL:</dt>
+        <dd aria-label={`${downloadsTotal} total downloads`}>▼ {downloadsTotal.toLocaleString("en-US")}</dd>
+      </div>
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">FILES:</dt>
+        <dd aria-label={`${assetsCount} assets`}>{assetsCount}</dd>
+      </div>
+    </dl>
+
+    {excerpt && (
+      <p dir="auto" class="line-clamp-3 text-sm normal-case leading-relaxed tracking-wide text-[#6b7280]">
+        {excerpt}
+      </p>
+    )}
+
+    <div class="mt-auto flex gap-3 pt-2">
+      <a
+        href={detailHref}
+        aria-label={viewLabel}
+        class="cyber-chamfer-sm inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border-2 border-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] transition-all duration-150 hover:bg-[#00ff88] hover:text-[#0a0a0f] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+      >
+        VIEW-&gt;
+      </a>
+      <a
+        href={githubHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={ghLabel}
+        class="cyber-chamfer-sm inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border border-[#2a2a3a] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#e0e0e0] transition-all duration-150 hover:border-[#ff00ff] hover:text-[#ff00ff] hover:shadow-[0_0_5px_#ff00ff,0_0_20px_#ff00ff60] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+      >
+        GITHUB
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10" /><path d="M7 17 17 7" /></svg>
+      </a>
+    </div>
+  </div>
+</article>

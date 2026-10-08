@@ -1,0 +1,316 @@
+---
+/**
+ * /releases/ — full release shelf.
+ * SSR grid (SEO + no-JS) sorted published desc + vanilla-JS filter by name/tag.
+ * Contracts: Base { title, description, canonical, ogImage, jsonLd, noindex },
+ * ReleaseCard { release }, ReleaseParser (no props),
+ * lib/releases { getReleases, totalDownloads }.
+ */
+import Base from "../../layouts/Base.astro";
+import ReleaseCard from "../../components/ReleaseCard.astro";
+import ReleaseParser from "../../components/ReleaseParser.astro";
+import { getReleases, totalDownloads } from "../../lib/releases";
+
+const SITE = "https://thesmarter.github.io";
+const CANONICAL = `${SITE}/releases/`;
+
+const all: any[] = ((await getReleases()) as any[]) ?? [];
+
+function pubDate(r: any): string {
+  return String(r?.published_at ?? r?.publishedAt ?? r?.created_at ?? r?.updated_at ?? "");
+}
+function assetsOf(r: any): any[] {
+  return Array.isArray(r?.assets) ? r.assets : [];
+}
+function assetDownloads(a: any): number {
+  return Number(a?.download_count ?? a?.downloadCount ?? a?.downloads ?? 0) || 0;
+}
+function releaseDownloads(r: any): number {
+  const direct = Number(r?.downloads ?? r?.download_count ?? NaN);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  return assetsOf(r).reduce((s, a) => s + assetDownloads(a), 0);
+}
+function repoKey(r: any): string {
+  return String(r?.full_name ?? r?.fullName ?? (r?.org && r?.repo ? `${r.org}/${r.repo}` : r?.name ?? "unknown"));
+}
+function tagOf(r: any): string {
+  return String(r?.tag ?? r?.tag_name ?? r?.name ?? r?.slug ?? "");
+}
+function nameOf(r: any): string {
+  return String(r?.name ?? r?.tag ?? r?.tag_name ?? r?.slug ?? "Untagged build");
+}
+function searchHay(r: any): string {
+  return [r?.name, r?.tag, r?.tag_name, r?.full_name, r?.fullName, r?.slug]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+// Newest first.
+const sorted = [...all].sort((a, b) => pubDate(b).localeCompare(pubDate(a)));
+
+// ---------- stats ----------
+const releaseCount = all.length;
+const assetCount = all.reduce((s, r) => s + assetsOf(r).length, 0);
+let totalDl = 0;
+try {
+  const v = Number((totalDownloads as any)(all));
+  if (Number.isFinite(v) && v >= 0) totalDl = v;
+} catch { /* fall through to fallbacks */ }
+if (!(totalDl > 0)) {
+  try {
+    const v = Number((totalDownloads as any)());
+    if (Number.isFinite(v) && v > 0) totalDl = v;
+  } catch { /* manual fallback below */ }
+}
+if (!(totalDl > 0)) totalDl = all.reduce((s, r) => s + releaseDownloads(r), 0);
+const repoCount = new Set(all.map(repoKey)).size;
+
+// ---------- JSON-LD: ItemList of SoftwareApplication ----------
+const itemListJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Smart Team releases",
+  description:
+    "Tagged software releases from the Smart Team collective — binaries, APKs, and source archives.",
+  numberOfItems: sorted.length,
+  itemListElement: sorted.slice(0, 50).map((r: any, i: number) => {
+    const assets = assetsOf(r);
+    const first = assets[0];
+    return {
+      "@type": "ListItem",
+      position: i + 1,
+      item: {
+        "@type": "SoftwareApplication",
+        name: `${repoKey(r)} ${tagOf(r)}`.trim(),
+        softwareVersion: tagOf(r),
+        description: String(r?.description ?? nameOf(r)).slice(0, 300),
+        downloadUrl:
+          first?.browser_download_url ?? first?.download_url ?? r?.html_url ?? `${SITE}/releases/`,
+        releaseNotes: r?.html_url ?? `${SITE}/releases/${r?.slug ?? ""}/`,
+        applicationCategory: "DeveloperApplication",
+        operatingSystem: "Cross-platform",
+      },
+    };
+  }),
+};
+
+const title = "Releases — Ship. Tag. Download. | Smart Team";
+const description =
+  "Every tagged Smart Team release in one place — APKs, binaries, and source archives with checksums, changelogs, and one-line installs. Search the shelf or paste any release URL.";
+---
+
+<Base
+  title={title}
+  description={description}
+  canonical={CANONICAL}
+  ogImage={`${SITE}/og/default.png`}
+  jsonLd={itemListJsonLd}
+>
+  <div class="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+    <nav aria-label="Breadcrumb" class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-neon">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-neon">Releases</li>
+      </ol>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <section class="relative overflow-hidden py-12 md:py-16" aria-labelledby="releases-title">
+      <div class="grid grid-cols-1 gap-10 lg:grid-cols-[60%_40%]">
+        <div>
+          <p class="section-label terminal-prefix">// RELEASES</p>
+          <h1 id="releases-title" class="mt-4 text-5xl font-black uppercase leading-none tracking-widest md:text-7xl">
+            <span class="cyber-glitch" data-text="SHIP. TAG. DOWNLOAD.">SHIP. TAG. DOWNLOAD.</span>
+          </h1>
+          <p class="mt-6 max-w-2xl leading-relaxed text-fg/85">
+            Every tagged build from the collective — APKs, binaries, and source
+            archives. Each release carries its changelog, checksums, and a
+            one-line install. No accounts, no gates, just files.
+          </p>
+          <div class="mt-8 flex flex-wrap gap-4">
+            <a
+              href="#shelf"
+              class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg hover:brightness-110"
+            >Browse shelf</a>
+            <a
+              href="/releases/parse/"
+              class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-magenta px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-magenta hover:bg-magenta hover:text-bg"
+            >Parse a URL →</a>
+          </div>
+        </div>
+
+        <!-- HUD: live counters -->
+        <aside class="hidden lg:block" aria-label="Release index status">
+          <div class="hud-corners cyber-chamfer border border-neon/30 bg-muted/30 p-6 backdrop-blur glow-box">
+            <div class="flex items-center justify-between border-b border-border pb-3">
+              <p class="font-accent text-xs uppercase tracking-[0.25em] text-neon">● SHELF_FEED</p>
+              <p class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">releases v1</p>
+            </div>
+            <div class="mt-4 space-y-3 font-mono text-sm">
+              <p><span class="text-muted-fg">releases:</span> <span class="text-fg">{releaseCount} tagged</span></p>
+              <p><span class="text-muted-fg">assets:</span> <span class="text-fg">{assetCount} files</span></p>
+              <p><span class="text-muted-fg">downloads:</span> <span class="text-neon">{totalDl.toLocaleString("en-US")}</span></p>
+              <p><span class="text-muted-fg">repos:</span> <span class="text-cyan">{repoCount} shipping</span></p>
+              <p><span class="text-muted-fg">tool:</span> <a href="/releases/parse/">/releases/parse/</a></p>
+            </div>
+            <div class="mt-5 border border-border bg-bg p-4 font-mono text-xs leading-relaxed">
+              <p class="text-muted-fg">$ smartteam releases --latest</p>
+              <p class="text-neon">✓ {releaseCount} releases · {assetCount} assets<span class="blink">▊</span></p>
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      <!-- stats -->
+      <dl class="mt-10 flex divide-x divide-border border-y border-border bg-card/60 backdrop-blur">
+        <div class="flex-1 px-4 py-4 text-center md:px-6">
+          <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Releases</dt>
+          <dd class="font-display text-2xl font-bold text-neon glow-sm md:text-3xl">{releaseCount}</dd>
+        </div>
+        <div class="flex-1 px-4 py-4 text-center md:px-6">
+          <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Assets</dt>
+          <dd class="font-display text-2xl font-bold text-fg md:text-3xl">{assetCount}</dd>
+        </div>
+        <div class="flex-1 px-4 py-4 text-center md:px-6">
+          <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Downloads</dt>
+          <dd class="font-display text-2xl font-bold text-cyan glow-cyan md:text-3xl">{totalDl.toLocaleString("en-US")}</dd>
+        </div>
+        <div class="flex-1 px-4 py-4 text-center md:px-6">
+          <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Repos</dt>
+          <dd class="font-display text-2xl font-bold text-magenta glow-magenta md:text-3xl">{repoCount}</dd>
+        </div>
+      </dl>
+    </section>
+
+    <!-- ================= PARSER EMBED ================= -->
+    <section class="py-8" aria-labelledby="parser-title">
+      <p class="section-label terminal-prefix">PULL // ANY_URL</p>
+      <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <h2 id="parser-title" class="text-3xl font-bold uppercase md:text-4xl">
+          Have a release link? <span class="text-neon glow">Paste it.</span>
+        </h2>
+        <a href="/releases/parse/" class="font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">
+          Full parser tool →
+        </a>
+      </div>
+      <p class="mt-3 max-w-3xl text-sm leading-relaxed text-fg/80">
+        Drop any <code class="bg-card px-1.5 py-0.5 text-neon">github.com/&#123;org&#125;/&#123;repo&#125;/releases/tag/&#123;tag&#125;</code>
+        URL — including ones not yet on this shelf — and fetch its assets live.
+      </p>
+      <div class="mt-6">
+        <ReleaseParser />
+      </div>
+    </section>
+
+    <!-- ================= SHELF ================= -->
+    <section id="shelf" class="scroll-mt-24 py-12" aria-labelledby="shelf-title">
+      <p class="section-label terminal-prefix">SHELF // ALL_BUILDS</p>
+      <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <h2 id="shelf-title" class="text-4xl font-bold uppercase md:text-5xl">
+          The <span class="text-neon glow">shelf</span>
+        </h2>
+        <p id="release-count" role="status" aria-live="polite" class="font-mono text-xs uppercase tracking-[0.2em] text-neon">
+          {releaseCount}/{releaseCount} SHOWN // ALL
+        </p>
+      </div>
+      <p class="mt-4 max-w-3xl text-fg/80">
+        Newest first. Filter by release name or tag — filtering is instant and
+        runs entirely in your browser.
+      </p>
+
+      <!-- filter -->
+      <form
+        role="search"
+        aria-label="Filter releases"
+        class="cyber-chamfer-sm mt-8 border border-border bg-card p-4 sm:p-6"
+        onsubmit="return false;"
+      >
+        <label for="release-filter" class="mb-2 block font-mono text-[11px] uppercase tracking-[0.2em] text-muted-fg">
+          FILTER_BY_NAME_OR_TAG
+        </label>
+        <div class="relative">
+          <span aria-hidden="true" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-neon">&gt;</span>
+          <input
+            id="release-filter"
+            name="q"
+            type="search"
+            autocomplete="off"
+            spellcheck={false}
+            placeholder="type to filter… e.g. wallet, v2.1, pos"
+            class="min-h-[44px] w-full border border-border bg-bg py-3 pl-9 pr-24 font-mono text-sm uppercase tracking-[0.15em] text-neon placeholder:text-muted-fg placeholder:opacity-70 focus:border-neon focus:outline-none"
+          />
+          <button
+            type="button"
+            id="release-clear"
+            class="absolute right-1 top-1/2 inline-flex min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center font-mono text-xs uppercase tracking-[0.2em] text-muted-fg hover:text-danger"
+            aria-label="Clear release filter"
+          >
+            [x]
+          </button>
+        </div>
+      </form>
+
+      <!-- SSR grid: full shelf for SEO + no-JS -->
+      <div id="release-grid" class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="All releases, newest first">
+        {sorted.map((r: any) => (
+          <div data-release-card data-search={searchHay(r)}>
+            <ReleaseCard release={r} />
+          </div>
+        ))}
+      </div>
+
+      <div id="release-empty" hidden class="mt-8 border border-magenta/40 bg-bg p-8 font-mono text-sm leading-relaxed">
+        <p class="text-magenta">$ NO_RELEASES_MATCH<span aria-hidden="true" class="animate-pulse">_</span></p>
+        <p class="mt-2 uppercase tracking-[0.2em] text-muted-fg">&gt; TRY_A_DIFFERENT_NAME_OR_TAG</p>
+      </div>
+
+      {sorted.length === 0 && (
+        <div class="mt-8 border border-border bg-card p-8 font-mono text-sm leading-relaxed">
+          <p class="text-neon">$ SHELF_EMPTY<span aria-hidden="true" class="blink">▊</span></p>
+          <p class="mt-2 text-fg/80">
+            No releases are indexed yet. Paste any release URL
+            <a href="/releases/parse/">in the parser</a> to fetch it live.
+          </p>
+        </div>
+      )}
+    </section>
+  </div>
+
+  <script>
+    (() => {
+      const input = document.getElementById("release-filter");
+      const grid = document.getElementById("release-grid");
+      const count = document.getElementById("release-count");
+      const empty = document.getElementById("release-empty");
+      const clearBtn = document.getElementById("release-clear");
+      if (!input || !grid) return;
+      const cards = Array.from(grid.querySelectorAll("[data-release-card]"));
+      const total = cards.length;
+      function apply() {
+        const q = String(input.value || "").trim().toLowerCase();
+        const tokens = q.split(/\s+/).filter(Boolean);
+        let visible = 0;
+        for (const card of cards) {
+          const hay = (card.getAttribute("data-search") || "").toLowerCase();
+          const hit = tokens.every((t) => hay.includes(t));
+          card.style.display = hit ? "" : "none";
+          if (hit) visible += 1;
+        }
+        if (count) {
+          const suffix = q ? ` // "${q.toUpperCase().slice(0, 40)}"` : " // ALL";
+          count.textContent = `${visible}/${total} SHOWN${suffix}`;
+        }
+        if (empty) empty.hidden = visible !== 0;
+      }
+      input.addEventListener("input", apply);
+      clearBtn?.addEventListener("click", () => {
+        input.value = "";
+        apply();
+        input.focus();
+      });
+      apply();
+    })();
+  </script>
+</Base>

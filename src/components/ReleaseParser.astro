@@ -1,0 +1,343 @@
+---
+/**
+ * ReleaseParser.astro -- self-contained interactive island (vanilla JS,
+ * no framework, no imports from lib).
+ *
+ * Input a GitHub release URL -> fetch api.github.com release by tag
+ * (fallback: match tag in /releases list) -> render preview in the same
+ * cyberpunk visual language. Deep-link via ?url= + localStorage last 5.
+ *
+ * props: { initialUrl?: string }
+ */
+interface Props {
+  initialUrl?: string;
+}
+
+const { initialUrl = "" } = Astro.props as Props;
+let queryUrl = initialUrl;
+try {
+  queryUrl = initialUrl || Astro.url.searchParams.get("url") || "";
+} catch {
+  queryUrl = initialUrl;
+}
+---
+
+<section
+  data-release-parser
+  data-initial-url={queryUrl}
+  aria-label="GitHub release parser"
+  class="cyber-chamfer border border-[#2a2a3a] bg-[#12121a] font-mono"
+>
+  <header class="flex items-center gap-2 border-b border-[#2a2a3a] bg-[#0a0a0f] px-4 py-3" aria-hidden="true">
+    <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ff5f56]"></span>
+    <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ffbd2e]"></span>
+    <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#27c93f]"></span>
+    <p class="ml-2 truncate text-[11px] uppercase tracking-[0.3em] text-[#6b7280]">
+      RELEASE_PARSER<span class="text-[#00ff88]">_</span>
+    </p>
+  </header>
+
+  <div class="flex flex-col gap-4 p-5 sm:p-6">
+    <form data-rp-form role="search" aria-label="Parse GitHub release URL" class="flex flex-col gap-3">
+      <label for="rp-url-input" class="text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">
+        GITHUB_RELEASE_URL
+      </label>
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <div class="relative flex-1">
+          <span aria-hidden="true" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#00ff88]">&gt;</span>
+          <input
+            data-rp-input
+            id="rp-url-input"
+            name="url"
+            type="url"
+            inputmode="url"
+            autocomplete="off"
+            spellcheck={false}
+            value={queryUrl}
+            placeholder="https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0"
+            aria-describedby="rp-status"
+            class="cyber-chamfer-sm min-h-[44px] w-full border border-[#2a2a3a] bg-[#0a0a0f] py-3 pl-9 pr-3 text-sm tracking-wide text-[#00ff88] placeholder:text-[#6b7280] placeholder:opacity-70 focus:border-[#00ff88] focus:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840] focus:outline-none"
+          />
+        </div>
+        <button
+          data-rp-btn
+          type="submit"
+          aria-label="Extract release metadata from URL"
+          class="cyber-chamfer-sm inline-flex min-h-[44px] items-center justify-center gap-2 border-2 border-[#00ff88] px-6 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] transition-all duration-150 hover:bg-[#00ff88] hover:text-[#0a0a0f] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f] disabled:cursor-wait disabled:opacity-50"
+        >
+          EXTRACT
+        </button>
+      </div>
+    </form>
+
+    <p
+      data-rp-status
+      id="rp-status"
+      role="status"
+      aria-live="polite"
+      dir="auto"
+      class="cyber-chamfer-sm min-h-[44px] border border-[#2a2a3a] bg-[#0a0a0f] px-3 py-3 text-[12px] uppercase tracking-[0.2em] text-[#6b7280]"
+    >
+      &gt; STANDBY // PASTE_URL + EXTRACT<span aria-hidden="true" class="animate-pulse text-[#00ff88]">_</span>
+    </p>
+
+    <div data-rp-preview aria-live="polite"></div>
+
+    <div>
+      <p class="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">LAST_5 // LOCAL_HISTORY</p>
+      <ul data-rp-history class="flex flex-col gap-2">
+        <li data-rp-history-empty class="text-[12px] uppercase tracking-[0.2em] text-[#6b7280]">// NO_HISTORY_YET</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+  (() => {
+    var LS_KEY = "smarter-release-history-v1";
+    var TAG_RX = /github\.com\/([^\/\s?#]+)\/([^\/\s?#]+)\/releases\/tag\/([^\s\/?#]+)/i;
+
+    function parseReleaseUrl(u) {
+      var m = String(u || "").trim().match(TAG_RX);
+      if (!m) return null;
+      var tag = m[3];
+      try { tag = decodeURIComponent(tag); } catch (e) { /* keep raw */ }
+      return { org: m[1], repo: String(m[2]).replace(/\.git$/i, ""), tag: tag };
+    }
+
+    function esc(s) {
+      return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+        return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+      });
+    }
+
+    function fmtBytes(n) {
+      n = Number(n) || 0;
+      if (n <= 0) return "0 B";
+      var units = ["B", "KB", "MB", "GB", "TB"];
+      var i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1);
+      var v = n / Math.pow(1024, i);
+      return (v >= 100 ? Math.round(v) : v.toFixed(1)) + " " + units[i];
+    }
+
+    function fmtDate(iso) {
+      if (!iso) return "DATE_UNKNOWN";
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return esc(String(iso)).toUpperCase();
+      try {
+        return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" }).toUpperCase();
+      } catch (e) { return esc(String(iso)).toUpperCase(); }
+    }
+
+    function readHistory() {
+      try {
+        var raw = window.localStorage.getItem(LS_KEY);
+        var arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr.slice(0, 5) : [];
+      } catch (e) { return []; }
+    }
+
+    function pushHistory(entry) {
+      try {
+        var arr = readHistory().filter(function (h) { return h && h.url !== entry.url; });
+        arr.unshift(entry);
+        window.localStorage.setItem(LS_KEY, JSON.stringify(arr.slice(0, 5)));
+      } catch (e) { /* storage unavailable */ }
+    }
+
+    function setStatus(root, text, kind) {
+      var el = root.querySelector("[data-rp-status]");
+      if (!el) return;
+      el.textContent = text;
+      el.classList.remove("text-[#ff3366]", "text-[#00ff88]", "text-[#00d4ff]", "text-[#6b7280]", "text-[#ff00ff]");
+      el.classList.add(
+        kind === "error" ? "text-[#ff3366]"
+        : kind === "ok" ? "text-[#00ff88]"
+        : kind === "busy" ? "text-[#00d4ff]"
+        : "text-[#6b7280]",
+      );
+    }
+
+    function previewHTML(d, org, repo, srcUrl) {
+      var tag = d.tag_name || d.tag || "?";
+      var name = d.name || tag;
+      var pre = !!d.prerelease;
+      var badgeCls = pre
+        ? "border-[#ff00ff] bg-[#ff00ff]/10 text-[#ff00ff]"
+        : "border-[#00ff88] bg-[#00ff88]/10 text-[#00ff88]";
+      var assets = Array.isArray(d.assets) ? d.assets : [];
+      var total = assets.reduce(function (s, a) { return s + (Number(a.download_count) || 0); }, 0);
+      var excerpt = String(d.body || "").slice(0, 140);
+      var rows = assets.slice(0, 8).map(function (a) {
+        return (
+          '<li class="flex min-h-[44px] items-center justify-between gap-3 border border-[#2a2a3a] bg-[#0a0a0f] px-3 py-2 text-[12px]">' +
+            '<span class="min-w-0 flex-1 truncate uppercase tracking-[0.15em] text-[#e0e0e0]" title="' + esc(a.name) + '">' + esc(a.name) + "</span>" +
+            '<span class="shrink-0 uppercase tracking-[0.15em] text-[#00d4ff]">' + esc(fmtBytes(a.size)) + "</span>" +
+            '<span class="shrink-0 uppercase tracking-[0.15em] text-[#6b7280]">v ' + (Number(a.download_count) || 0).toLocaleString("en-US") + "</span>" +
+          "</li>"
+        );
+      }).join("");
+      var deep = "/releases/parse?url=" + encodeURIComponent(srcUrl);
+      return (
+        '<article aria-label="Release preview ' + esc(tag) + '" class="cyber-chamfer flex flex-col gap-3 border border-[#00ff88]/40 bg-[#0a0a0f] p-4">' +
+          '<div class="flex flex-wrap items-center gap-2">' +
+            '<span class="cyber-chamfer-sm inline-flex min-h-[30px] items-center border px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] ' + badgeCls + '">' + esc(tag) + "</span>" +
+            '<span class="text-[11px] uppercase tracking-[0.2em] ' + (pre ? "text-[#ff00ff]" : "text-[#00ff88]") + '">[' + (pre ? "PRERELEASE" : "STABLE") + "]</span>" +
+          "</div>" +
+          '<h3 class="truncate font-display text-base font-bold uppercase tracking-wide text-[#e0e0e0]">' + esc(name) + "</h3>" +
+          '<p class="truncate text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">' + esc(org + "/" + repo) + " // " + esc(fmtDate(d.published_at)) + "</p>" +
+          '<p class="text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0]">FILES: ' + assets.length + " // DL_TOTAL: v " + total.toLocaleString("en-US") + "</p>" +
+          (excerpt
+            ? '<p dir="auto" class="line-clamp-3 text-sm leading-relaxed text-[#6b7280]">' + esc(excerpt) + (String(d.body || "").length > 140 ? "[...]" : "") + "</p>"
+            : '<p class="text-[12px] uppercase tracking-[0.2em] text-[#6b7280]">// NO_BODY</p>') +
+          (rows ? '<ul class="flex flex-col gap-2" aria-label="Assets">' + rows + "</ul>" : "") +
+          (assets.length > 8 ? '<p class="text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">+ ' + (assets.length - 8) + " MORE_FILES [...]</p>" : "") +
+          '<div class="flex flex-col gap-2 sm:flex-row">' +
+            '<a href="' + esc(deep) + '" aria-label="Open parsed deep link for ' + esc(tag) + '" class="cyber-chamfer-sm inline-flex min-h-[44px] flex-1 items-center justify-center border-2 border-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] hover:bg-[#00ff88] hover:text-[#0a0a0f]">OPEN_PARSE_LINK -&gt;</a>' +
+            '<a href="' + esc(d.html_url || ("https://github.com/" + org + "/" + repo + "/releases/tag/" + tag)) + '" target="_blank" rel="noopener noreferrer" aria-label="View ' + esc(tag) + ' on GitHub" class="cyber-chamfer-sm inline-flex min-h-[44px] flex-1 items-center justify-center border border-[#2a2a3a] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#e0e0e0] hover:border-[#ff00ff] hover:text-[#ff00ff]">GITHUB /</a>' +
+          "</div>" +
+        "</article>"
+      );
+    }
+
+    function renderHistory(root, onPick) {
+      var ul = root.querySelector("[data-rp-history]");
+      if (!ul) return;
+      var arr = readHistory();
+      ul.innerHTML = "";
+      if (arr.length === 0) {
+        var li = document.createElement("li");
+        li.setAttribute("data-rp-history-empty", "");
+        li.className = "text-[12px] uppercase tracking-[0.2em] text-[#6b7280]";
+        li.textContent = "// NO_HISTORY_YET";
+        ul.appendChild(li);
+        return;
+      }
+      arr.forEach(function (h) {
+        var item = document.createElement("li");
+        var b = document.createElement("button");
+        b.type = "button";
+        b.className = "inline-flex min-h-[44px] w-full items-center justify-between gap-3 border border-[#2a2a3a] bg-[#0a0a0f] px-3 text-left text-[11px] uppercase tracking-[0.15em] text-[#6b7280] hover:border-[#00d4ff] hover:text-[#00d4ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff]";
+        b.setAttribute("aria-label", "Re-parse " + h.url);
+        var label = document.createElement("span");
+        label.className = "min-w-0 flex-1 truncate";
+        label.textContent = h.url;
+        label.setAttribute("dir", "auto");
+        var tagEl = document.createElement("span");
+        tagEl.className = "shrink-0 text-[#00ff88]";
+        tagEl.textContent = h.tag || "";
+        b.appendChild(label);
+        b.appendChild(tagEl);
+        b.addEventListener("click", function () { onPick(h.url); });
+        item.appendChild(b);
+        ul.appendChild(item);
+      });
+    }
+
+    async function fetchRelease(org, repo, tag) {
+      var base = "https://api.github.com/repos/" + org + "/" + repo;
+      var res = await fetch(base + "/releases/tags/" + encodeURIComponent(tag), {
+        headers: { accept: "application/vnd.github+json" },
+      });
+      if (res.ok) return await res.json();
+      if (res.status === 403 || res.status === 429) {
+        var e1 = new Error("rate limited");
+        e1.code = "RATE_LIMITED";
+        throw e1;
+      }
+      if (res.status === 404) {
+        // fallback: scan release list for matching tag
+        var list = await fetch(base + "/releases?per_page=100", {
+          headers: { accept: "application/vnd.github+json" },
+        });
+        if (list.status === 403 || list.status === 429) {
+          var e2 = new Error("rate limited");
+          e2.code = "RATE_LIMITED";
+          throw e2;
+        }
+        if (list.ok) {
+          var arr = await list.json();
+          var hit = Array.isArray(arr) ? arr.find(function (r) { return r && r.tag_name === tag; }) : null;
+          if (hit) return hit;
+        }
+        var e3 = new Error("not found");
+        e3.code = "NOT_FOUND";
+        throw e3;
+      }
+      var e4 = new Error("fetch failed: " + res.status);
+      e4.code = res.status === 404 ? "NOT_FOUND" : "HTTP_" + res.status;
+      throw e4;
+    }
+
+    function init(root) {
+      var form = root.querySelector("[data-rp-form]");
+      var input = root.querySelector("[data-rp-input]");
+      var btn = root.querySelector("[data-rp-btn]");
+      var preview = root.querySelector("[data-rp-preview]");
+      var busy = false;
+
+      function pick(url) {
+        if (input) input.value = url;
+        run();
+      }
+
+      renderHistory(root, pick);
+
+      async function run() {
+        if (busy) return;
+        var srcUrl = input ? String(input.value || "").trim() : "";
+        var parsed = parseReleaseUrl(srcUrl);
+        if (!parsed) {
+          setStatus(root, "> ERROR: INVALID_URL // EXPECT .../releases/tag/<tag>", "error");
+          return;
+        }
+        busy = true;
+        if (btn) btn.disabled = true;
+        if (preview) preview.innerHTML = "";
+        setStatus(root, "> FETCHING api.github.com/repos/" + parsed.org + "/" + parsed.repo + "/releases/tags/" + parsed.tag + " ...", "busy");
+        try {
+          var data = await fetchRelease(parsed.org, parsed.repo, parsed.tag);
+          if (preview) preview.innerHTML = previewHTML(data, parsed.org, parsed.repo, srcUrl);
+          setStatus(root, "> OK: " + parsed.tag + " // " + (Array.isArray(data.assets) ? data.assets.length : 0) + " FILES", "ok");
+          pushHistory({ url: srcUrl, tag: data.tag_name || parsed.tag, ts: Date.now() });
+          renderHistory(root, pick);
+          try {
+            var p = new URLSearchParams(window.location.search);
+            p.set("url", srcUrl);
+            window.history.replaceState(null, "", window.location.pathname + "?" + p.toString());
+          } catch (e) { /* ignore */ }
+        } catch (err) {
+          var code = (err && err.code) || "NETWORK";
+          var hint =
+            code === "NOT_FOUND" ? " // TAG_OR_REPO_MISSING"
+            : code === "RATE_LIMITED" ? " // API_QUOTA_EXCEEDED_RETRY_LATER"
+            : " // " + String((err && err.message) || "FETCH_FAILED").toUpperCase().slice(0, 60);
+          setStatus(root, "> ERROR: " + code + hint, "error");
+        } finally {
+          busy = false;
+          if (btn) btn.disabled = false;
+        }
+      }
+
+      if (form) form.addEventListener("submit", function (e) { e.preventDefault(); run(); });
+
+      // deep-link: ?url= auto-extract once
+      var boot = null;
+      try {
+        boot = new URLSearchParams(window.location.search).get("url") || root.getAttribute("data-initial-url") || "";
+      } catch (e) {
+        boot = root.getAttribute("data-initial-url") || "";
+      }
+      if (boot && input && !input.value) input.value = boot;
+      if (boot && input && input.value) run();
+    }
+
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll("[data-release-parser]").forEach(init);
+      });
+    } else {
+      document.querySelectorAll("[data-release-parser]").forEach(init);
+    }
+  })();
+</script>

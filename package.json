@@ -7,8 +7,8 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "fetch": "node ./scripts/fetch-repos.mjs",
-    "prebuild": "node ./scripts/fetch-repos.mjs || echo fetch-fallback",
+    "fetch": "node ./scripts/fetch-repos.mjs && node ./scripts/fetch-releases.mjs",
+    "prebuild": "npm run fetch || echo fetch-fallback",
     "check": "astro check"
   },
   "repository": {

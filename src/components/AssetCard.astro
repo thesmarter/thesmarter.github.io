@@ -1,0 +1,215 @@
+---
+/**
+ * AssetCard.astro — per-file download card for a GitHub release asset.
+ *
+ * props: { asset, index?, tag? }
+ * asset fields: { name, label, content_type, size, download_count, digest, browser_download_url }
+ * `tag` is optional (falls back to asset.tag / asset.tag_name) and is used
+ * only for the `gh release download` CLI snippet.
+ */
+interface AssetCardAsset {
+  name: string;
+  label?: string | null;
+  content_type?: string | null;
+  contentType?: string | null;
+  mime?: string | null;
+  size?: number | null;
+  download_count?: number | null;
+  downloadCount?: number | null;
+  downloads?: number | null;
+  digest?: string | null;
+  sha256?: string | null;
+  browser_download_url?: string | null;
+  browserDownloadUrl?: string | null;
+  url?: string | null;
+  tag?: string | null;
+  tag_name?: string | null;
+  tagName?: string | null;
+}
+
+interface Props {
+  asset: AssetCardAsset;
+  index?: number;
+  tag?: string | null;
+}
+
+const { asset, index = 0, tag: tagProp = null } = Astro.props as Props;
+const a: AssetCardAsset = asset ?? ({ name: "unknown" } as AssetCardAsset);
+
+const fileName: string = a.name ?? "unknown";
+const fileLabel: string | null = a.label ?? null;
+const contentTypeRaw: string = a.content_type ?? a.contentType ?? a.mime ?? "application/octet-stream";
+const byteSize: number = Number(a.size ?? 0) || 0;
+const dlCount: number = Number(a.download_count ?? a.downloadCount ?? a.downloads ?? 0) || 0;
+const digest: string | null = a.digest ?? a.sha256 ?? null;
+const downloadUrl: string = a.browser_download_url ?? a.browserDownloadUrl ?? a.url ?? "#";
+const tagName: string = tagProp ?? a.tag ?? a.tag_name ?? a.tagName ?? "TAG";
+
+function formatBytes(n: number): string {
+  if (!n || n <= 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), units.length - 1);
+  const v = n / Math.pow(1024, i);
+  return `${v >= 100 ? Math.round(v) : v.toFixed(1)} ${units[i]}`;
+}
+const sizeLabel: string = formatBytes(byteSize);
+
+// short content-type: after "/" (before ";"), uppercased, truncated
+const contentShort: string = String(contentTypeRaw)
+  .split(";")[0]
+  .split("/")
+  .pop()!
+  .trim()
+  .toUpperCase()
+  .replace(/[^A-Z0-9.+_-]+/gi, "_")
+  .slice(0, 24) || "OCTET-STREAM";
+
+const lower = fileName.toLowerCase();
+const isApk: boolean = lower.endsWith(".apk");
+const isArchive: boolean = /\.(zip|tar\.gz|tgz|tar|gz|7z|rar|bz2|xz)$/i.test(lower);
+const kindLabel: string = isApk ? "APK" : isArchive ? "ARCHIVE" : "FILE";
+
+const cliSnippet: string = `gh release download ${tagName} ${fileName}`;
+const cardLabel = `Asset ${index + 1}: ${fileName}, ${sizeLabel}, ${dlCount} downloads`;
+const dlLabel = `DOWNLOAD_${fileName.toUpperCase().replace(/[^A-Z0-9]+/gi, "_").slice(0, 48)}`;
+---
+
+<article
+  aria-label={cardLabel}
+  class="cyber-chamfer relative flex min-h-full flex-col border border-[#2a2a3a] bg-[#12121a] font-mono transition-all duration-300 hover:-translate-y-1 hover:border-[#00d4ff] hover:shadow-[0_0_5px_#00d4ff,0_0_20px_#00d4ff60]"
+>
+  <div class="flex items-start gap-3 p-5 pb-0">
+    <span
+      class="cyber-chamfer-sm inline-flex h-11 w-11 shrink-0 items-center justify-center border border-[#00d4ff]/40 bg-[#0a0a0f] text-[#00d4ff]"
+      aria-hidden="true"
+    >
+      {isApk ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2" /><line x1="11" y1="18.5" x2="13" y2="18.5" /><circle cx="12" cy="5.5" r="0.6" fill="currentColor" /><path d="M9.5 9.5h5M9.5 12h5" /></svg>
+      ) : isArchive ? (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" /><path d="M3 8l9 5 9-5" /><path d="M12 13v8" /></svg>
+      ) : (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" /></svg>
+      )}
+    </span>
+    <div class="min-w-0 flex-1">
+      <p class="text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">[{kindLabel}] #{index + 1}</p>
+      <h3 class="mt-1 truncate text-sm font-bold uppercase tracking-wide text-[#e0e0e0]" title={fileName}>
+        {fileName}
+      </h3>
+      {fileLabel && <p class="truncate text-[12px] uppercase tracking-[0.2em] text-[#6b7280]">{fileLabel}</p>}
+    </div>
+  </div>
+
+  <div class="flex flex-col gap-3 p-5">
+    <dl class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0]">
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">SIZE:</dt>
+        <dd class="text-[#00d4ff]">{sizeLabel}</dd>
+      </div>
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">DL:</dt>
+        <dd aria-label={`${dlCount} downloads`}>▼ {dlCount.toLocaleString("en-US")}</dd>
+      </div>
+      <div class="inline-flex min-h-[30px] items-center gap-2">
+        <dt class="text-[#6b7280]">TYPE:</dt>
+        <dd title={contentTypeRaw}>{contentShort}</dd>
+      </div>
+    </dl>
+
+    {digest && (
+      <details class="border border-[#2a2a3a] bg-[#0a0a0f]">
+        <summary class="inline-flex min-h-[44px] w-full cursor-pointer list-none items-center justify-between gap-2 px-3 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] hover:text-[#00ff88] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#00ff88] [&::-webkit-details-marker]:hidden">
+          <span>SHA256_DIGEST</span>
+          <span aria-hidden="true" class="text-[#00ff88]">+</span>
+        </summary>
+        <div class="flex items-start gap-2 border-t border-[#2a2a3a] p-3">
+          <code class="min-w-0 flex-1 break-all text-[11px] normal-case leading-relaxed tracking-normal text-[#00ff88]">{digest}</code>
+          <button
+            type="button"
+            data-copy-text={digest}
+            aria-label={`Copy SHA256 digest of ${fileName}`}
+            class="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center border border-[#2a2a3a] text-[#6b7280] transition-all duration-150 hover:border-[#00ff88] hover:text-[#00ff88] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88]"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+          </button>
+        </div>
+      </details>
+    )}
+
+    <a
+      href={downloadUrl}
+      download={fileName}
+      aria-label={dlLabel}
+      class="cyber-chamfer-sm inline-flex min-h-[44px] w-full items-center justify-center gap-2 bg-[#00ff88] px-4 text-[13px] font-bold uppercase tracking-[0.2em] text-[#0a0a0f] transition-all duration-150 hover:brightness-110 hover:shadow-[0_0_10px_#00ff88,0_0_20px_#00ff8860,0_0_40px_#00ff8830] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+      DOWNLOAD
+    </a>
+
+    <div class="flex gap-2">
+      <button
+        type="button"
+        data-copy-text={downloadUrl}
+        aria-label={`Copy direct download link of ${fileName}`}
+        class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border border-[#2a2a3a] px-3 text-[11px] uppercase tracking-[0.2em] text-[#6b7280] transition-all duration-150 hover:border-[#00d4ff] hover:text-[#00d4ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff]"
+      >
+        COPY_LINK
+      </button>
+      <button
+        type="button"
+        data-copy-text={cliSnippet}
+        aria-label={`Copy GH CLI download command for ${fileName}`}
+        class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border border-[#2a2a3a] px-3 text-[11px] uppercase tracking-[0.2em] text-[#6b7280] transition-all duration-150 hover:border-[#ff00ff] hover:text-[#ff00ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00ff]"
+      >
+        COPY_CLI
+      </button>
+    </div>
+
+    <div class="border border-[#2a2a3a] bg-[#0a0a0f]">
+      <p class="border-b border-[#2a2a3a] px-3 py-2 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">
+        <span aria-hidden="true" class="text-[#00ff88]">$ </span>GH_CLI
+      </p>
+      <code class="block overflow-x-auto whitespace-nowrap px-3 py-2 text-[12px] normal-case tracking-normal text-[#e0e0e0]">{cliSnippet}</code>
+    </div>
+  </div>
+</article>
+
+<script>
+  (() => {
+    if (typeof window === "undefined") return;
+    if (window["__assetCopyInit"]) return;
+    window["__assetCopyInit"] = true;
+    async function copyText(t) {
+      try {
+        await navigator.clipboard.writeText(t);
+        return true;
+      } catch {
+        try {
+          const ta = document.createElement("textarea");
+          ta.value = t;
+          ta.setAttribute("readonly", "");
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+    }
+    document.addEventListener("click", async (e) => {
+      const btn = e.target && e.target.closest ? e.target.closest("[data-copy-text]") : null;
+      if (!btn) return;
+      const text = btn.getAttribute("data-copy-text") || "";
+      if (!text) return;
+      const ok = await copyText(text);
+      const orig = btn.innerHTML;
+      btn.innerHTML = ok ? "COPIED ✓" : "COPY_FAIL ✗";
+      btn.setAttribute("data-copied", ok ? "true" : "false");
+      setTimeout(() => { btn.innerHTML = orig; btn.removeAttribute("data-copied"); }, 1400);
+    });
+  })();
+</script>

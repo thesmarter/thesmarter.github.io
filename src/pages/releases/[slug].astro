@@ -1,0 +1,332 @@
+---
+/**
+ * /releases/[slug]/ — per-release page.
+ * getStaticPaths from getReleases(). Renders body as-is via ReleaseBody
+ * (body already contains any accounts table — extract nothing) plus a
+ * separate quick-install box and the full asset grid.
+ * Contracts: Base { title, description, canonical, ogImage, jsonLd, noindex },
+ * AssetCard { asset, index }, ReleaseBody { body },
+ * lib/releases { getReleases, getReleaseBySlug, formatBytes }.
+ */
+import Base from "../../layouts/Base.astro";
+import AssetCard from "../../components/AssetCard.astro";
+import ReleaseBody from "../../components/ReleaseBody.astro";
+import { getReleases, getReleaseBySlug, formatBytes } from "../../lib/releases";
+
+const SITE = "https://thesmarter.github.io";
+
+export async function getStaticPaths() {
+  const all: any[] = ((await getReleases()) as any[]) ?? [];
+  return all.map((r: any) => ({
+    params: { slug: String(r?.slug ?? r?.tag ?? r?.tag_name ?? "") },
+    props: { release: r },
+  }));
+}
+
+const slug = String(Astro.params.slug ?? "");
+const preloaded = (Astro.props as { release?: any }).release;
+let rel: any = preloaded;
+if (!rel) {
+  try {
+    rel = await (getReleaseBySlug as any)(slug);
+  } catch {
+    rel = null;
+  }
+}
+if (!rel) throw new Error(`Unknown release slug: ${slug}`);
+
+// ---------- normalizers (accept likely lib shapes) ----------
+const tag: string = String(rel?.tag ?? rel?.tag_name ?? rel?.name ?? slug);
+const fullName: string = String(
+  rel?.full_name ?? rel?.fullName ?? (rel?.org && rel?.repo ? `${rel.org}/${rel.repo}` : rel?.name ?? "unknown"),
+);
+const repoUrl: string = String(rel?.html_url ?? rel?.htmlUrl ?? rel?.repo_url ?? `https://github.com/${fullName}`);
+const releaseUrl: string = String(rel?.url ?? rel?.release_url ?? rel?.html_url ?? `${repoUrl}/releases/tag/${tag}`);
+const body: string = String(rel?.body ?? rel?.notes ?? rel?.description ?? "");
+const assets: any[] = Array.isArray(rel?.assets) ? rel.assets : [];
+const author: any = rel?.author ?? rel?.uploader ?? {};
+const authorLogin: string = String(author?.login ?? rel?.author_login ?? "unknown");
+const authorAvatar: string = String(author?.avatar_url ?? author?.avatarUrl ?? "");
+const authorUrl: string = String(author?.html_url ?? author?.htmlUrl ?? `https://github.com/${authorLogin}`);
+const published: string = String(rel?.published_at ?? rel?.publishedAt ?? rel?.created_at ?? "");
+const updated: string = String(rel?.updated_at ?? rel?.updatedAt ?? published);
+const prerelease: boolean = Boolean(rel?.prerelease ?? rel?.is_prerelease ?? false);
+const tarballUrl: string = String(
+  rel?.tarball_url ?? rel?.tarballUrl ?? `https://github.com/${fullName}/archive/refs/tags/${tag}.tar.gz`,
+);
+const zipballUrl: string = String(
+  rel?.zipball_url ?? rel?.zipballUrl ?? `https://github.com/${fullName}/archive/refs/tags/${tag}.zip`,
+);
+
+function assetDl(a: any): number {
+  return Number(a?.download_count ?? a?.downloadCount ?? a?.downloads ?? 0) || 0;
+}
+function assetSize(a: any): number {
+  return Number(a?.size ?? a?.file_size ?? a?.fileSize ?? 0) || 0;
+}
+function assetName(a: any): string {
+  return String(a?.name ?? a?.file_name ?? "asset");
+}
+const directDl = Number(rel?.downloads ?? rel?.download_count ?? NaN);
+const downloadCount =
+  Number.isFinite(directDl) && directDl > 0
+    ? directDl
+    : assets.reduce((s, a) => s + assetDl(a), 0);
+
+function fmt(bytes: number): string {
+  try {
+    const v = (formatBytes as any)(bytes);
+    if (typeof v === "string" && v) return v;
+  } catch { /* manual fallback */ }
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  let n = bytes;
+  let u = 0;
+  while (n >= 1024 && u < units.length - 1) {
+    n /= 1024;
+    u += 1;
+  }
+  return `${n >= 100 ? Math.round(n) : n.toFixed(1)} ${units[u]}`;
+}
+const totalBytes = assets.reduce((s, a) => s + assetSize(a), 0);
+
+// Quick-install: prefer the largest APK, otherwise the largest asset overall.
+const apkAssets = assets.filter((a) => assetName(a).toLowerCase().endsWith(".apk"));
+const installPool = apkAssets.length > 0 ? apkAssets : assets;
+const largest = [...installPool].sort((a, b) => assetSize(b) - assetSize(a))[0] ?? null;
+const largestUrl: string = largest
+  ? String(largest?.browser_download_url ?? largest?.download_url ?? largest?.url ?? releaseUrl)
+  : releaseUrl;
+const ghView = `gh release view ${tag} --repo ${fullName}`;
+const ghDownload = apkAssets.length > 0
+  ? `gh release download ${tag} --repo ${fullName} --pattern "*.apk"`
+  : `gh release download ${tag} --repo ${fullName}`;
+
+const shortPublished = published ? published.slice(0, 10) : "";
+const shortUpdated = updated ? updated.slice(0, 10) : "";
+const canonical = `${SITE}/releases/${slug}/`;
+const pageDescription = body
+  ? body.replace(/[#*`>|[\]()]/g, " ").replace(/\s+/g, " ").trim().slice(0, 300)
+  : `${fullName} ${tag} — download APKs, binaries, and source archives with changelog and install notes.`;
+
+// ---------- JSON-LD: SoftwareApplication + SoftwareSourceCode ----------
+const appJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: `${fullName} ${tag}`.trim(),
+  softwareVersion: tag,
+  description: pageDescription,
+  downloadUrl: largestUrl,
+  releaseNotes: canonical,
+  applicationCategory: "DeveloperApplication",
+  operatingSystem: apkAssets.length > 0 ? "Android" : "Cross-platform",
+  offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+};
+const codeJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  name: fullName,
+  description: pageDescription,
+  codeRepository: repoUrl,
+  programmingLanguage: rel?.language ?? "Other",
+  author: { "@type": "Organization", name: "Smart Team", url: `${SITE}/` },
+};
+---
+
+<Base
+  title={`${fullName} ${tag} — Release | Smart Team`}
+  description={pageDescription}
+  canonical={canonical}
+  ogImage={`${SITE}/og/default.png`}
+  jsonLd={[appJsonLd, codeJsonLd]}
+>
+  <div class="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+    <nav aria-label="Breadcrumb" class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-neon">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/releases/" class="hover:text-neon">Releases</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-neon">{tag}</li>
+      </ol>
+    </nav>
+
+    <!-- ================= HEADER ================= -->
+    <header class="mt-8">
+      <p class="section-label terminal-prefix">RELEASE // {fullName.toUpperCase()}</p>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <h1 class="font-display text-4xl font-black uppercase tracking-wide md:text-5xl">
+          <a href={repoUrl} target="_blank" rel="noopener noreferrer" class="hover:text-neon">{fullName}</a>
+        </h1>
+      </div>
+
+      <div class="mt-4 flex flex-wrap items-center gap-3 font-mono text-xs">
+        <span class="border-2 border-neon bg-neon px-3 py-1.5 font-bold uppercase tracking-[0.2em] text-bg">{tag}</span>
+        {prerelease ? (
+          <span class="border border-magenta/60 bg-magenta/10 px-3 py-1.5 uppercase tracking-[0.2em] text-magenta">◈ PRERELEASE</span>
+        ) : (
+          <span class="border border-neon/50 px-3 py-1.5 uppercase tracking-[0.2em] text-neon">✓ STABLE</span>
+        )}
+        <span class="border border-border bg-card px-3 py-1.5 text-fg">↓ {downloadCount.toLocaleString("en-US")} downloads</span>
+        <span class="border border-border bg-card px-3 py-1.5 text-muted-fg">{assets.length} file{assets.length === 1 ? "" : "s"} · {fmt(totalBytes)}</span>
+      </div>
+
+      <div class="mt-6 flex flex-wrap items-center gap-x-8 gap-y-3 font-mono text-xs uppercase tracking-[0.2em] text-muted-fg">
+        {authorLogin !== "unknown" && (
+          <span class="inline-flex items-center gap-2">
+            {authorAvatar && (
+              <img
+                src={authorAvatar}
+                alt={`Avatar of ${authorLogin}`}
+                width="28"
+                height="28"
+                loading="lazy"
+                class="h-7 w-7 border border-border object-cover"
+              />
+            )}
+            by <a href={authorUrl} target="_blank" rel="noopener noreferrer" class="text-cyan">{authorLogin}</a>
+          </span>
+        )}
+        {published && (
+          <span>published <time datetime={published} class="text-fg">{shortPublished}</time></span>
+        )}
+        {updated && updated !== published && (
+          <span>updated <time datetime={updated} class="text-fg">{shortUpdated}</time></span>
+        )}
+      </div>
+    </header>
+
+    <!-- ================= ASCII TERMINAL ================= -->
+    <div class="cyber-chamfer mt-8 border border-border bg-bg" aria-label={`Inspect ${tag} with GitHub CLI`}>
+      <div class="flex items-center gap-1.5 border-b border-border px-5 py-3" aria-hidden="true">
+        <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></span>
+        <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#febc2e]"></span>
+        <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#28c840]"></span>
+        <span class="ml-3 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">release.sh</span>
+      </div>
+      <div class="flex flex-wrap items-center gap-3 p-5">
+        <code id="gh-view-cmd" class="flex-1 overflow-x-auto whitespace-nowrap font-mono text-sm text-neon" dir="ltr">$ {ghView}</code>
+        <button
+          type="button"
+          data-copy-target="gh-view-cmd"
+          class="cyber-chamfer-sm min-h-[44px] min-w-[88px] border border-neon px-4 py-2 font-accent text-xs uppercase tracking-[0.2em] text-neon hover:bg-neon hover:text-bg"
+          aria-label="Copy gh release view command"
+        >Copy</button>
+      </div>
+    </div>
+
+    <!-- ================= QUICK INSTALL ================= -->
+    <section class="mt-8 border border-neon/30 bg-card/60 p-5 sm:p-6" aria-labelledby="quick-install-title">
+      <div class="flex flex-wrap items-end justify-between gap-3">
+        <h2 id="quick-install-title" class="font-display text-xl font-bold uppercase">
+          Quick install<span aria-hidden="true" class="text-neon">_</span>
+        </h2>
+        {largest && (
+          <p class="font-mono text-xs uppercase tracking-[0.2em] text-muted-fg">
+            pick: <span class="text-neon" dir="auto">{assetName(largest)}</span>
+            <span class="text-fg"> · {fmt(assetSize(largest))}</span>
+          </p>
+        )}
+      </div>
+      <div class="mt-4 border border-border bg-bg">
+        <div class="flex flex-wrap items-center gap-3 p-4">
+          <code id="gh-dl-cmd" class="flex-1 overflow-x-auto whitespace-nowrap font-mono text-sm text-neon" dir="ltr">$ {ghDownload}</code>
+          <button
+            type="button"
+            data-copy-target="gh-dl-cmd"
+            class="cyber-chamfer-sm min-h-[44px] min-w-[88px] border border-neon px-4 py-2 font-accent text-xs uppercase tracking-[0.2em] text-neon hover:bg-neon hover:text-bg"
+            aria-label="Copy gh release download command"
+          >Copy</button>
+        </div>
+      </div>
+      <div class="mt-4 flex flex-wrap gap-4">
+        {largest && (
+          <a
+            href={largestUrl}
+            class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg hover:brightness-110"
+          >Download{largest && apkAssets.length > 0 ? " APK" : ""} ↓</a>
+        )}
+        <a
+          href={releaseUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-[44px] items-center font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon"
+        >View on GitHub →</a>
+      </div>
+    </section>
+
+    <!-- ================= ASSETS ================= -->
+    <section class="mt-12" aria-labelledby="assets-title">
+      <p class="section-label terminal-prefix">FILES // {assets.length} ASSET{assets.length === 1 ? "" : "S"}</p>
+      <h2 id="assets-title" class="mt-2 text-3xl font-bold uppercase md:text-4xl">
+        Downloads<span aria-hidden="true" class="text-neon">_</span>
+      </h2>
+      {assets.length > 0 ? (
+        <div class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {assets.map((a: any, i: number) => (
+            <AssetCard asset={a} index={i} />
+          ))}
+        </div>
+      ) : (
+        <p class="mt-6 border border-border bg-card p-6 font-mono text-sm text-muted-fg">
+          $ NO_ATTACHED_BINARIES — grab the source archive below.
+        </p>
+      )}
+
+      <!-- source code row -->
+      <div class="cyber-chamfer-sm mt-6 flex flex-wrap items-center gap-3 border border-border bg-card p-4 sm:p-5">
+        <p class="w-full font-mono text-[11px] uppercase tracking-[0.25em] text-muted-fg sm:w-auto">SOURCE_CODE //</p>
+        <a
+          href={tarballUrl}
+          class="inline-flex min-h-[44px] items-center border border-cyan/60 px-4 font-accent text-xs uppercase tracking-[0.2em] text-cyan hover:bg-cyan hover:text-bg"
+        >↓ .tar.gz</a>
+        <a
+          href={zipballUrl}
+          class="inline-flex min-h-[44px] items-center border border-cyan/60 px-4 font-accent text-xs uppercase tracking-[0.2em] text-cyan hover:bg-cyan hover:text-bg"
+        >↓ .zip</a>
+        <code class="ml-auto hidden overflow-x-auto font-mono text-xs text-muted-fg xl:block" dir="ltr">{tarballUrl}</code>
+      </div>
+    </section>
+
+    <!-- ================= NOTES / CHANGELOG (rendered as-is) ================= -->
+    <section class="mt-12" aria-labelledby="notes-title">
+      <p class="section-label terminal-prefix">NOTES // CHANGELOG</p>
+      <h2 id="notes-title" class="mt-2 text-3xl font-bold uppercase md:text-4xl">
+        Release notes<span aria-hidden="true" class="text-magenta">_</span>
+      </h2>
+      <div dir="auto" class="mt-6">
+        <ReleaseBody body={body} />
+      </div>
+    </section>
+
+    <!-- ================= BACK LINKS ================= -->
+    <nav class="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-border pt-6 font-accent text-sm uppercase tracking-[0.2em]" aria-label="Release navigation">
+      <a href="/releases/" class="inline-flex min-h-[44px] items-center text-cyan hover:text-neon">← All releases</a>
+      <a href="/releases/parse/" class="inline-flex min-h-[44px] items-center text-muted-fg hover:text-neon">Parse another URL</a>
+      <a href={releaseUrl} target="_blank" rel="noopener noreferrer" class="inline-flex min-h-[44px] items-center text-muted-fg hover:text-neon">GitHub source ↗</a>
+    </nav>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-copy-target");
+        const el = id ? document.getElementById(id) : null;
+        const text = (el?.textContent ?? "").replace(/^\$\s*/, "").trim();
+        try {
+          await navigator.clipboard.writeText(text);
+          const orig = btn.textContent;
+          btn.textContent = "Copied ✓";
+          setTimeout(() => { btn.textContent = orig; }, 1600);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+      });
+    });
+  </script>
+</Base>

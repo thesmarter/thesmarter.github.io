@@ -1,7 +1,5 @@
-# Weekly data refresh: re-fetch public repos for the 3 orgs every Monday at 02:00
-# UTC and commit src/data/repos.json (+ src/data/meta.json, written by the same
-# script) back to main when changed. The push re-triggers deploy.yml, so the
-# live catalog updates itself.
+# Weekly data refresh: re-fetch public repos + releases for the 3 orgs every
+# Monday at 02:00 UTC and commit src/data/*.json back to main when changed.
 #
 # Alternative (review-first): replace the auto-commit step with
 # peter-evans/create-pull-request to open a PR instead of pushing to main.
@@ -45,7 +43,7 @@ jobs:
       - name: Commit refreshed data if changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(data): weekly refresh of repo catalog"
-          file_pattern: src/data/repos.json src/data/meta.json
+          commit_message: "chore(data): weekly refresh of repo catalog + releases"
+          file_pattern: src/data/repos.json src/data/meta.json src/data/releases.json src/data/releases-meta.json
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
