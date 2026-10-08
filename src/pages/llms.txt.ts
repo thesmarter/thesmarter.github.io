@@ -1,33 +1,9 @@
-import reposRaw from "../data/repos.json";
+import { projects, displayDescription } from "../lib/repos";
 
 const SITE = "https://thesmarter.github.io";
 
-function list(): any[] {
-  const r = reposRaw as unknown as any;
-  if (Array.isArray(r)) return r;
-  return r?.repos ?? r?.items ?? [];
-}
-
-function norm(r: any, i: number) {
-  const slug = String(
-    r.slug ?? r.name?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? `repo-${i}`
-  );
-  const org = String(r.org ?? r.owner ?? r.fullName?.split("/")?.[0] ?? r.full_name?.split("/")?.[0] ?? "thesmarter");
-  const name = String(r.name ?? slug);
-  return {
-    slug,
-    name: String(r.fullName ?? r.full_name ?? `${org}/${name}`),
-    description: String(r.description ?? "Open-source project from Smart Team."),
-    url: String(r.url ?? r.html_url ?? `https://github.com/${org}/${name}`),
-    language: String(r.language ?? r.primaryLanguage ?? "TypeScript"),
-    org,
-  };
-}
-
 export async function GET() {
-  const repos = list()
-    .map(norm)
-    .sort((a, b) => a.name.localeCompare(b.name));
+  const repos = [...projects].sort((a, b) => a.full_name.localeCompare(b.full_name));
 
   const lines: string[] = [];
   lines.push(`# Smart Team — Open Source Hub`);
@@ -44,8 +20,8 @@ export async function GET() {
   lines.push(``);
   lines.push(`Browse the catalog at ${SITE}/#catalog. Machine index at ${SITE}/search-index.json.`);
   lines.push(``);
-  for (const r of repos) {
-    lines.push(`- [${r.name}](${SITE}/repos/${r.slug}/): ${r.description} [code](${r.url})`);
+  for (const p of repos) {
+    lines.push(`- [${p.full_name}](${SITE}/repos/${p.slug}/): ${displayDescription(p)} [code](${p.html_url})`);
   }
   lines.push(``);
   lines.push(`## Contribute`);

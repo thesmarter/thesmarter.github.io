@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="stFavTitle">
+  <title id="stFavTitle">SMART_TEAM favicon</title>
+  <defs>
+    <filter id="stFavGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="1.6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="64" height="64" fill="#0a0a0f"/>
+  <rect x="4" y="4" width="56" height="56" fill="none" stroke="#00ff88" stroke-width="4"/>
+  <text x="32" y="45" text-anchor="middle" font-family="'Share Tech Mono', monospace" font-size="30" font-weight="700" fill="#00ff88" filter="url(#stFavGlow)">&gt;_</text>
+</svg>

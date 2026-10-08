@@ -1,0 +1,35 @@
+---
+/**
+ * TerminalWindow.astro — traffic dots + title + slot.
+ * props: { title?: string, prompt?: string, class?: string }
+ */
+interface Props {
+  title?: string;
+  prompt?: string;
+  class?: string;
+}
+const { title = 'terminal', prompt, class: klass = '' } = Astro.props as Props;
+---
+
+<section
+  aria-label={title}
+  class={`border border-[#2a2a3a] bg-[#0a0a0f] font-mono ${klass}`}
+  style="clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));"
+>
+  <header class="flex items-center gap-2 border-b border-[#2a2a3a] bg-[#12121a] px-4 py-3">
+    <span class="inline-block h-3 w-3 rounded-full bg-[#ff5f56]" aria-hidden="true"></span>
+    <span class="inline-block h-3 w-3 rounded-full bg-[#ffbd2e]" aria-hidden="true"></span>
+    <span class="inline-block h-3 w-3 rounded-full bg-[#27c93f]" aria-hidden="true"></span>
+    <p class="ml-2 truncate text-[11px] uppercase tracking-[0.3em] text-[#6b7280]">
+      {title}<span aria-hidden="true" class="text-[#00ff88]">_</span>
+    </p>
+  </header>
+  <div class="relative p-5 sm:p-6">
+    {prompt && (
+      <p class="mb-3 text-[12px] uppercase tracking-[0.2em] text-[#00ff88]" aria-hidden="true">
+        &gt; {prompt}<span class="animate-pulse">▊</span>
+      </p>
+    )}
+    <slot />
+  </div>
+</section>

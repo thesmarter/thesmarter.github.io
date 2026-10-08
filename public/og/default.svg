@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-labelledby="stOgTitle stOgDesc">
+  <title id="stOgTitle">Smart Team — Open-Source Hub</title>
+  <desc id="stOgDesc">Social card fallback: SMART TEAM headline with chromatic aberration on void black.</desc>
+  <defs>
+    <pattern id="stOgGrid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <path d="M50 0H0V50" fill="none" stroke="#00ff88" stroke-opacity="0.07" stroke-width="1"/>
+    </pattern>
+    <pattern id="stOgScan" width="4" height="4" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1.2" fill="#000000" fill-opacity="0.28"/>
+    </pattern>
+    <filter id="stOgGlow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="#0a0a0f"/>
+  <rect width="1200" height="630" fill="url(#stOgGrid)"/>
+  <polygon points="24,60 60,24 1140,24 1176,60 1176,570 1140,606 60,606 24,570" fill="none" stroke="#00ff88" stroke-opacity="0.5" stroke-width="3"/>
+  <text x="600" y="300" text-anchor="middle" font-family="Orbitron, 'Share Tech Mono', monospace" font-size="120" font-weight="800" letter-spacing="6" fill="#ff00ff" opacity="0.55" transform="translate(-5,0)">SMART TEAM</text>
+  <text x="600" y="300" text-anchor="middle" font-family="Orbitron, 'Share Tech Mono', monospace" font-size="120" font-weight="800" letter-spacing="6" fill="#00d4ff" opacity="0.55" transform="translate(5,0)">SMART TEAM</text>
+  <text x="600" y="300" text-anchor="middle" font-family="Orbitron, 'Share Tech Mono', monospace" font-size="120" font-weight="800" letter-spacing="6" fill="#e0e0e0" filter="url(#stOgGlow)">SMART TEAM</text>
+  <text x="600" y="380" text-anchor="middle" font-family="'Share Tech Mono', monospace" font-size="36" letter-spacing="8" fill="#00ff88" filter="url(#stOgGlow)">&gt;_ OPEN-SOURCE HUB</text>
+  <text x="600" y="442" text-anchor="middle" font-family="'Share Tech Mono', monospace" font-size="26" letter-spacing="5" fill="#6b7280">40 REPOS // 3 ORGS // THESMARTER.GITHUB.IO</text>
+  <rect width="1200" height="630" fill="url(#stOgScan)"/>
+</svg>

@@ -1,0 +1,35 @@
+---
+import Base from "../layouts/Base.astro";
+
+const SITE = "https://thesmarter.github.io";
+---
+
+<Base
+  title="404 — Signal Lost | Smart Team"
+  description="Page not found on the Smart Team open-source hub. Return to the catalog, FAQ, or homepage."
+  canonical={SITE + "/404/"}
+  ogImage={SITE + "/og/cover.png"}
+  noindex={true}
+>
+  <div class="mx-auto flex min-h-[70vh] max-w-4xl flex-col items-center justify-center px-5 py-24 text-center lg:px-8">
+    <p class="section-label terminal-prefix">ERR // 404_SIGNAL_LOST</p>
+    <h1 class="mt-4 font-display text-7xl font-black uppercase tracking-widest md:text-8xl">
+      <span class="cyber-glitch" data-text="404">404</span>
+    </h1>
+    <p class="mt-4 font-display text-xl uppercase tracking-wide text-neon glow">signal lost in the sprawl_</p>
+    <p class="mt-6 max-w-xl leading-relaxed text-fg/80">
+      The feed you requested does not exist or was moved. The catalog, FAQ, and
+      contribution guide are still online — jack back in below.
+    </p>
+    <div class="cyber-chamfer mt-8 w-full border border-border bg-bg p-5 text-left font-mono text-sm">
+      <p><span class="text-neon">$</span> <span class="text-fg">smartteam locate {Astro.url.pathname}</span></p>
+      <p class="text-danger">✗ no route matched — 404</p>
+      <p><span class="text-neon">$</span> <span class="text-fg">smartteam recover<span class="blink">▊</span></span></p>
+    </div>
+    <nav class="mt-8 flex flex-wrap justify-center gap-4" aria-label="Recovery">
+      <a href="/" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg hover:brightness-110">Home</a>
+      <a href="/#catalog" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border border-border px-6 py-3 font-accent text-sm uppercase tracking-[0.2em] text-fg hover:border-neon hover:text-neon">Catalog</a>
+      <a href="/faq/" class="inline-flex min-h-[44px] items-center font-accent text-sm uppercase tracking-[0.2em] text-muted-fg hover:text-neon">FAQ →</a>
+    </nav>
+  </div>
+</Base>

@@ -1,0 +1,25 @@
+---
+/**
+ * Stat.astro — single stat cell (use inside flex/divide-x or grid).
+ * props: { value: string|number, label: string, sub?: string, accent?: 'green'|'cyan'|'magenta' }
+ */
+interface Props {
+  value: string | number;
+  label: string;
+  sub?: string;
+  accent?: 'green' | 'cyan' | 'magenta';
+}
+const { value, label, sub, accent = 'green' } = Astro.props as Props;
+const accentColor = accent === 'cyan' ? '#00d4ff' : accent === 'magenta' ? '#ff00ff' : '#00ff88';
+---
+
+<div class="min-w-0 flex-1 px-4 py-6 text-center font-mono sm:px-6">
+  <p
+    class="text-3xl font-black uppercase tracking-widest md:text-4xl"
+    style={`color: ${accentColor}; text-shadow: 0 0 10px ${accentColor}80;`}
+  >
+    {value}
+  </p>
+  <p class="mt-2 text-[11px] uppercase tracking-[0.3em] text-[#e0e0e0]">{label}</p>
+  {sub && <p class="mt-1 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">{sub}</p>}
+</div>

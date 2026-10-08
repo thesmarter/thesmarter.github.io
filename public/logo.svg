@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 160" role="img" aria-labelledby="stLogoTitle stLogoDesc">
+  <title id="stLogoTitle">SMART_TEAM_ logo</title>
+  <desc id="stLogoDesc">Cyberpunk terminal mark: neon-green prompt and SMART_TEAM wordmark on void black.</desc>
+  <defs>
+    <pattern id="stGrid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <path d="M24 0H0V24" fill="none" stroke="#00ff88" stroke-opacity="0.09" stroke-width="1"/>
+    </pattern>
+    <filter id="stGlow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="480" height="160" fill="#0a0a0f"/>
+  <rect width="480" height="160" fill="url(#stGrid)"/>
+  <polygon points="8,22 22,8 458,8 472,22 472,138 458,152 22,152 8,138" fill="#0a0a0f" fill-opacity="0.4" stroke="#00ff88" stroke-opacity="0.55" stroke-width="2"/>
+  <circle cx="34" cy="30" r="3" fill="#ff5f57"/>
+  <circle cx="48" cy="30" r="3" fill="#febc2e"/>
+  <circle cx="62" cy="30" r="3" fill="#28c840"/>
+  <text x="36" y="100" font-family="Orbitron, 'Share Tech Mono', monospace" font-size="46" font-weight="800" letter-spacing="2" fill="#00ff88" filter="url(#stGlow)">&gt;_</text>
+  <text x="142" y="98" font-family="Orbitron, 'Share Tech Mono', monospace" font-size="30" font-weight="800" letter-spacing="3" fill="#e0e0e0">SMART_TEAM</text>
+  <rect x="414" y="70" width="14" height="32" fill="#00ff88" filter="url(#stGlow)">
+    <animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite"/>
+  </rect>
+  <text x="142" y="128" font-family="'Share Tech Mono', monospace" font-size="15" letter-spacing="6" fill="#00d4ff">OPEN-SOURCE HUB</text>
+</svg>

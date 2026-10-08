@@ -1,0 +1,51 @@
+# Weekly data refresh: re-fetch public repos for the 3 orgs every Monday at 02:00
+# UTC and commit src/data/repos.json (+ src/data/meta.json, written by the same
+# script) back to main when changed. The push re-triggers deploy.yml, so the
+# live catalog updates itself.
+#
+# Alternative (review-first): replace the auto-commit step with
+# peter-evans/create-pull-request to open a PR instead of pushing to main.
+
+name: Nightly data refresh
+
+on:
+  schedule:
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+
+# The auto-commit step pushes to main, so contents must be writable.
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fail-soft script (exit 0, keeps existing files on rate-limit/network
+      # errors); `|| true` as a second safety net. GITHUB_TOKEN raises the
+      # GitHub API rate limit from 60 to 1000 req/h.
+      - name: Fetch latest org repos
+        run: npm run fetch || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Commits only when the data files actually changed; otherwise a no-op.
+      - name: Commit refreshed data if changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): weekly refresh of repo catalog"
+          file_pattern: src/data/repos.json src/data/meta.json
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com

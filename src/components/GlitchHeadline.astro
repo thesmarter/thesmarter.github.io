@@ -1,0 +1,72 @@
+---
+/**
+ * GlitchHeadline.astro — hero H1 with chromatic aberration + occasional glitch.
+ * props: { text?: string, level?: 1|2|3, glitch?: boolean, id?: string, class?: string }
+ * Slot fallback if `text` omitted.
+ */
+interface Props {
+  text?: string;
+  level?: 1 | 2 | 3;
+  glitch?: boolean;
+  id?: string;
+  class?: string;
+}
+const { text = '', level = 1, glitch = true, id, class: klass = '' } = Astro.props as Props;
+const Tag = level === 2 ? 'h2' : level === 3 ? 'h3' : 'h1';
+const content = text?.trim() ? text : null;
+---
+
+<Tag
+  id={id}
+  data-glitch={content ?? undefined}
+  class={`cyber-glitch relative font-mono font-black uppercase leading-none tracking-widest text-[#e0e0e0] text-5xl md:text-7xl lg:text-8xl ${glitch ? 'is-glitching' : ''} ${klass}`}
+>
+  {content ?? <slot />}
+</Tag>
+
+<style>
+  .cyber-glitch {
+    text-shadow:
+      0 0 10px rgba(0, 255, 136, 0.5),
+      0 0 20px rgba(0, 255, 136, 0.3);
+  }
+  .cyber-glitch::before,
+  .cyber-glitch::after {
+    content: attr(data-glitch);
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0.85;
+  }
+  .cyber-glitch::before {
+    color: #ff00ff;
+    text-shadow: -1px 0 #ff00ff;
+    z-index: -1;
+  }
+  .cyber-glitch::after {
+    color: #00d4ff;
+    text-shadow: -1px 0 #00d4ff;
+    z-index: -2;
+  }
+  .cyber-glitch.is-glitching::before,
+  .cyber-glitch.is-glitching::after {
+    animation: rgbShift 4s infinite steps(2), glitch 5s infinite steps(4);
+  }
+  .cyber-glitch.is-glitching::before { animation-delay: 0s, 1.2s; }
+  .cyber-glitch.is-glitching::after { animation-delay: 0.4s, 2.8s; }
+  @keyframes glitch {
+    0%, 100% { transform: translate(0); clip-path: inset(0 0 0 0); }
+    20% { transform: translate(-2px, 2px); clip-path: inset(10% 0 60% 0); }
+    40% { transform: translate(2px, -2px); clip-path: inset(50% 0 20% 0); }
+    60% { transform: translate(-1px, -1px); clip-path: inset(80% 0 5% 0); }
+    80% { transform: translate(1px, 1px); clip-path: inset(30% 0 40% 0); }
+  }
+  @keyframes rgbShift {
+    0%, 100% { text-shadow: -2px 0 #ff00ff, 2px 0 #00d4ff; }
+    50% { text-shadow: 2px 0 #ff00ff, -2px 0 #00d4ff; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .cyber-glitch::before, .cyber-glitch::after { animation: none; }
+  }
+</style>

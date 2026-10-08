@@ -1,58 +1,52 @@
 ---
 /**
  * Standalone FAQ page (/faq/)
- * Reuses FaqAccordion + FAQPage JSON-LD. Copy matches index.astro FAQs.
+ * Reuses FaqAccordion (items: { q, a }[]) + its auto FAQPage JSON-LD,
+ * plus explicit FAQPage block for standalone indexing.
  */
 import Base from "../../layouts/Base.astro";
 import FaqAccordion from "../../components/FaqAccordion.astro";
 
 const SITE = "https://thesmarter.github.io";
 
-const faqs = [
+const items = [
   {
-    question: "What is Smart Team?",
-    answer:
-      "Smart Team is an open-source collective operating across three GitHub organizations — thesmarter (core platform), AdaaSystem (ERP and business systems), and DetaElectPro (medical and electrophysiology). We build practical, production-grade software and publish it openly so anyone can inspect, reuse, and improve it.",
+    q: "What is Smart Team?",
+    a: "Smart Team is an open-source collective operating across three GitHub organizations — thesmarter (core platform), AdaaSystem (ERP and business systems), and DetaElectPro (medical and electrophysiology). We build practical, production-grade software and publish it openly so anyone can inspect, reuse, and improve it.",
   },
   {
-    question: "Where is the team based?",
-    answer:
-      "We are a distributed, remote-first collective with roots in Sudan and collaborators across multiple time zones. All coordination happens in the open on GitHub — issues, discussions, and pull requests are our headquarters.",
+    q: "Where is the team based?",
+    a: "We are a distributed, remote-first collective with roots in Sudan and collaborators across multiple time zones. All coordination happens in the open on GitHub — issues, discussions, and pull requests are our headquarters.",
   },
   {
-    question: "What kinds of projects do you maintain?",
-    answer:
-      "Forty public repositories spanning developer tooling, Astro/Tailwind starters, ERP modules (HR, inventory, accounting), medical signal tooling, mobile apps, and automation scripts. Each repository page lists its language, topics, stars, and live links so you can judge fit in seconds.",
+    q: "What kinds of projects do you maintain?",
+    a: "Forty public repositories spanning developer tooling, Astro/Tailwind starters, ERP modules (HR, inventory, accounting), medical signal tooling, mobile apps, and automation scripts. Each repository page lists its language, topics, stars, and live links so you can judge fit in seconds.",
   },
   {
-    question: "How can I contribute?",
-    answer:
-      "Pick an issue labelled good-first-issue, fork the repo, create a focused branch, and open a pull request. Clone with git clone, push your branch, then run gh pr create. Maintainers review every PR — small, well-tested changes merge fastest.",
+    q: "How can I contribute?",
+    a: "Pick an issue labelled good-first-issue, fork the repo, create a focused branch, and open a pull request. Clone with git clone, push your branch, then run gh pr create. Maintainers review every PR — small, well-tested changes merge fastest.",
   },
   {
-    question: "What licenses do you use?",
-    answer:
-      "Most projects use permissive licenses (MIT or Apache-2.0) so you can use them commercially with attribution. A few ERP and medical packages use copyleft or custom terms where data-safety demands it. Every repository declares its license in its root LICENSE file and on its repo page.",
+    q: "What licenses do you use?",
+    a: "Most projects use permissive licenses (MIT or Apache-2.0) so you can use them commercially with attribution. A few ERP and medical packages use copyleft or custom terms where data-safety demands it. Every repository declares its license in its root LICENSE file and on its repo page.",
   },
   {
-    question: "Do you offer commercial support?",
-    answer:
-      "Yes. For deployment, customization, training, and SLAs — especially around AdaaSystem ERP and DetaElectPro clinical tooling — open an issue or discussion on the relevant repository with the tag commercial-support. We scope fixed-price and retainer engagements in the open wherever possible.",
+    q: "Do you offer commercial support?",
+    a: "Yes. For deployment, customization, training, and SLAs — especially around AdaaSystem ERP and DetaElectPro clinical tooling — open an issue or discussion on the relevant repository with the tag commercial-support. We scope fixed-price and retainer engagements in the open wherever possible.",
   },
   {
-    question: "How do I report a security issue?",
-    answer:
-      "Do not open a public issue for vulnerabilities. Email the maintainers via the address listed in the repository SECURITY.md, or use GitHub private vulnerability reporting. Include reproduction steps, affected versions, and impact. We acknowledge reports within 72 hours and publish fixes with credit.",
+    q: "How do I report a security issue?",
+    a: "Do not open a public issue for vulnerabilities. Email the maintainers via the address listed in the repository SECURITY.md, or use GitHub private vulnerability reporting. Include reproduction steps, affected versions, and impact. We acknowledge reports within 72 hours and publish fixes with credit.",
   },
 ];
 
 const faqJsonLd = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  mainEntity: faqs.map((f) => ({
+  mainEntity: items.map((it) => ({
     "@type": "Question",
-    name: f.question,
-    acceptedAnswer: { "@type": "Answer", text: f.answer },
+    name: it.q,
+    acceptedAnswer: { "@type": "Answer", text: it.a },
   })),
 };
 ---
@@ -61,7 +55,7 @@ const faqJsonLd = {
   title="FAQ — Smart Team Open Source Hub"
   description="Frequently asked questions about Smart Team: what we build, where we work, how to contribute, licenses, commercial support, and security reporting."
   canonical={SITE + "/faq/"}
-  image={SITE + "/og/cover.png"}
+  ogImage={SITE + "/og/cover.png"}
   jsonLd={faqJsonLd}
 >
   <div class="mx-auto max-w-4xl px-5 py-16 lg:px-8">
@@ -82,7 +76,7 @@ const faqJsonLd = {
       how to contribute, and how to reach us for support or security reports.
     </p>
     <div class="mt-10">
-      <FaqAccordion faqs={faqs} id="faq-page-list" />
+      <FaqAccordion items={items} idPrefix="faq-page" />
     </div>
     <div class="cyber-chamfer mt-10 border border-border bg-card p-6">
       <h2 class="font-display text-lg font-bold uppercase">Still stuck?</h2>

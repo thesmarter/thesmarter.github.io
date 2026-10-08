@@ -1,0 +1,72 @@
+# Deploy the Astro static site to GitHub Pages.
+#
+# Pipeline: checkout -> Node 20 -> best-effort data fetch -> withastro/action@v4
+# (npm ci from lockfile + `npm run build`, which re-runs the fail-soft prebuild
+# fetch, then upload-pages-artifact of ./dist) -> deploy-pages.
+#
+# Setup (one time, repo Settings -> Pages): set Source to "GitHub Actions".
+# No CNAME file: this is an apex user site (thesmarter.github.io), served at the root.
+
+name: Deploy to GitHub Pages
+
+on:
+  # Deploy on every push to main.
+  push:
+    branches: [main]
+  # Allow manual deploys from the Actions tab.
+  workflow_dispatch:
+
+# Least privilege for a Pages deploy: clone + request a Pages deployment.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Queue Pages deployments instead of cancelling in-flight ones.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # Best-effort refresh of src/data/{repos,meta}.json before the build.
+      # scripts/fetch-repos.mjs uses node built-ins only (no install needed) and is
+      # fail-soft: on rate-limit/network errors it keeps existing files and exits 0.
+      # `|| true` keeps CI green no matter what.
+      - name: Refresh repo data (best-effort)
+        run: npm run fetch || true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Official Astro action: npm ci + `npm run build` + upload ./dist as the
+      # Pages artifact. GITHUB_TOKEN raises the GitHub API rate limit for the
+      # prebuild fetch step.
+      - name: Install, build, and upload site
+        uses: withastro/action@v4
+        with:
+          node-version: 20
+          package-manager: npm@latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

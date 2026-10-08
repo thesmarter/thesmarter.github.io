@@ -1,0 +1,51 @@
+---
+/**
+ * FaqAccordion.astro — native details/summary, full-width 48px+ targets.
+ * props: { items: { q: string, a: string }[], idPrefix?: string }
+ * Emits FAQPage JSON-LD automatically (JSON-LD compatible).
+ */
+interface FaqItem {
+  q: string;
+  a: string;
+}
+interface Props {
+  items: FaqItem[];
+  idPrefix?: string;
+}
+const { items = [], idPrefix = 'faq' } = Astro.props as Props;
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: items.map((it) => ({
+    '@type': 'Question',
+    name: it.q,
+    acceptedAnswer: { '@type': 'Answer', text: it.a },
+  })),
+};
+---
+
+<div class="font-mono">
+  {items.map((it, i) => {
+    const id = `${idPrefix}-${i}`;
+    return (
+      <details
+        id={id}
+        name={idPrefix}
+        class="group border-b border-[#2a2a3a] bg-[#12121a] transition-colors open:bg-[#0a0a0f] open:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840]"
+      >
+        <summary
+          aria-label={`Toggle answer: ${it.q}`}
+          class="flex min-h-[48px] w-full cursor-pointer list-none items-center justify-between gap-4 px-4 py-4 text-left text-sm font-bold uppercase tracking-[0.15em] text-[#e0e0e0] transition-colors hover:text-[#00ff88] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#00ff88] [&::-webkit-details-marker]:hidden"
+        >
+          <span><span aria-hidden="true" class="mr-3 text-[#00ff88]">&gt;</span>{it.q}</span>
+          <span aria-hidden="true" class="shrink-0 border border-[#2a2a3a] px-2 py-1 text-[#00ff88] transition-transform duration-200 group-open:rotate-45 group-open:border-[#00ff88]">+</span>
+        </summary>
+        <div class="px-4 pb-5 pl-8 text-sm normal-case leading-relaxed tracking-wide text-[#6b7280]">
+          <p>{it.a}</p>
+        </div>
+      </details>
+    );
+  })}
+  <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
+</div>

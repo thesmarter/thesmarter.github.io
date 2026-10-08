@@ -1,0 +1,34 @@
+---
+/**
+ * SectionHeading.astro — kicker //01 + H2 + rule.
+ * props: { kicker: string, title: string, description?: string, id?: string, align?: 'left'|'center' }
+ */
+interface Props {
+  kicker: string;
+  title: string;
+  description?: string;
+  id?: string;
+  align?: 'left' | 'center';
+}
+const { kicker, title, description, id, align = 'left' } = Astro.props as Props;
+const centered = align === 'center';
+---
+
+<div id={id} class={`font-mono ${centered ? 'text-center' : 'text-left'}`}>
+  <p class={`text-[12px] uppercase tracking-[0.3em] text-[#00ff88] ${centered ? 'mx-auto' : ''}`} aria-hidden="true">
+    {kicker}
+  </p>
+  <h2 class="mt-2 text-4xl font-bold uppercase tracking-wide text-[#e0e0e0] md:text-5xl">
+    {title}<span aria-hidden="true" class="text-[#ff00ff]">_</span>
+  </h2>
+  <div
+    aria-hidden="true"
+    class={`mt-4 h-px bg-gradient-to-r from-[#00ff88] via-[#00d4ff] to-transparent shadow-[0_0_5px_#00ff88] ${centered ? 'mx-auto max-w-md' : 'max-w-full'}`}
+  ></div>
+  {description && (
+    <p class={`mt-4 max-w-2xl text-sm normal-case leading-relaxed tracking-wide text-[#6b7280] ${centered ? 'mx-auto' : ''}`}>
+      {description}
+    </p>
+  )}
+  <slot />
+</div>

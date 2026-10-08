@@ -1,124 +1,41 @@
 ---
 /**
  * Smart Team — Single-page hub (/)
+ * Owned scope: src/pages/* only.
  *
- * Owned scope: src/pages/* only. Do NOT edit layouts/components/lib here.
- *
- * Contracts assumed (owned by sibling agents):
- * - src/layouts/Base.astro props: { title, description, canonical?, image?, jsonLd? }
- * - src/components/RepoCard.astro props: { repo, variant?: "default" | "holographic", featured?: boolean }
- * - src/components/SearchIsland.astro props: { repos: SearchEntry[] } (vanilla JS island, no client: directive needed)
- * - src/components/FaqAccordion.astro props: { faqs: { question, answer }[], id?: string }
- * - src/lib/repos.ts: getAllRepos() | getRepos() | allRepos | repos; getFeaturedRepos(n?) | getStats()
- * - src/data/repos.json: Repo[] or { repos: Repo[] }
+ * Real contracts (staged by sibling agents):
+ * - Base props: { title, description, canonical?, ogImage?, jsonLd?, noindex? }
+ * - RepoCard props: { repo, variant?: 'default'|'terminal'|'holographic', hoverEffect? }
+ * - SearchIsland props: { reposJsonUrl?, initialRepos? } (vanilla JS, own data-grid)
+ * - FaqAccordion props: { items: { q, a }[], idPrefix? } (auto-emits FAQPage JSON-LD)
+ * - lib/repos.ts: { projects, orgs, getFeatured(), getCurated(), sortRepos(), displayDescription() }
+ * - repos.json: { generated_at, orgs, projects }
  */
 import Base from "../layouts/Base.astro";
 import RepoCard from "../components/RepoCard.astro";
 import SearchIsland from "../components/SearchIsland.astro";
 import FaqAccordion from "../components/FaqAccordion.astro";
-import * as reposLib from "../lib/repos.js";
-import reposRaw from "../data/repos.json";
+import { projects, orgs as orgRows, getFeatured, getCurated, sortRepos, displayDescription } from "../lib/repos";
 
 const SITE = "https://thesmarter.github.io";
 
-// ---------- resilient data resolution ----------
-const libAny = reposLib as unknown as Record<string, any>;
-
-function rawList(): any[] {
-  if (Array.isArray(reposRaw)) return reposRaw as any[];
-  const r = reposRaw as unknown as Record<string, any>;
-  if (r && Array.isArray(r.repos)) return r.repos;
-  if (r && Array.isArray(r.items)) return r.items;
-  return [];
-}
-
-function resolveAll(): any[] {
-  try {
-    if (typeof libAny.getAllRepos === "function") return libAny.getAllRepos();
-    if (typeof libAny.getRepos === "function") return libAny.getRepos();
-    if (typeof libAny.getAllReposSorted === "function") return libAny.getAllReposSorted();
-    if (Array.isArray(libAny.allRepos)) return libAny.allRepos;
-    if (Array.isArray(libAny.repos)) return libAny.repos;
-  } catch { /* fall through to JSON */ }
-  return rawList();
-}
-
-function norm(r: any, i: number) {
-  const slug =
-    r.slug ?? r.name?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? `repo-${i}`;
-  const name = r.name ?? r.fullName?.split("/")?.pop() ?? slug;
-  const org =
-    r.org ?? r.owner ?? r.fullName?.split("/")?.[0] ?? r.full_name?.split("/")?.[0] ?? "thesmarter";
-  const url = r.url ?? r.html_url ?? r.htmlUrl ?? `https://github.com/${org}/${name}`;
-  return {
-    slug: String(slug),
-    name: String(name),
-    fullName: String(r.fullName ?? r.full_name ?? `${org}/${name}`),
-    description: String(r.description ?? r.tagline ?? "Open-source project from Smart Team."),
-    url: String(url),
-    homepage: r.homepage ?? r.homepageUrl ?? r.demoUrl ?? r.demo ?? "",
-    demoUrl: String(r.demoUrl ?? r.demo ?? r.homepage ?? ""),
-    language: r.language ?? r.primaryLanguage ?? "TypeScript",
-    stars: Number(r.stars ?? r.stargazers_count ?? r.stargazers ?? 0),
-    forks: Number(r.forks ?? r.forks_count ?? 0),
-    topics: Array.isArray(r.topics) ? r.topics.map(String) : [],
-    updatedAt: String(r.updatedAt ?? r.updated_at ?? r.pushed_at ?? new Date().toISOString()),
-    org: String(org),
-    featured: Boolean(r.featured ?? false),
-  };
-}
-
-const allRepos = resolveAll().map(norm);
-
-function resolveFeatured() {
-  try {
-    if (typeof libAny.getFeaturedRepos === "function") {
-      const f = libAny.getFeaturedRepos(6);
-      if (Array.isArray(f) && f.length) return f.map(norm);
-    }
-  } catch { /* ignore */ }
-  const flagged = allRepos.filter((r) => (r as any).featured);
-  const pool = flagged.length >= 6 ? flagged : [...flagged, ...allRepos.filter((r) => !(r as any).featured)];
-  return [...pool].sort((a, b) => b.stars - a.stars).slice(0, 6);
-}
-
-const featured = resolveFeatured();
-
 // ---------- stats (40 repos, 3 orgs, stars sum, languages) ----------
-function computeStats() {
-  try {
-    if (typeof libAny.getStats === "function") return libAny.getStats();
-    if (typeof libAny.getRepoStats === "function") return libAny.getRepoStats();
-    if (libAny.stats && typeof libAny.stats === "object") return libAny.stats;
-  } catch { /* ignore */ }
-  const totalStars = allRepos.reduce((s, r) => s + (r.stars || 0), 0);
-  const orgSet = new Set(allRepos.map((r) => r.org.toLowerCase()));
-  // Guarantee the 3 known orgs even before fetch completes
-  ["thesmarter", "adaasystem", "detaelectpro"].forEach((o) => orgSet.add(o));
-  const langCount = new Map<string, number>();
-  for (const r of allRepos) if (r.language) langCount.set(r.language, (langCount.get(r.language) ?? 0) + 1);
-  const languages = [...langCount.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l);
-  return {
-    total: allRepos.length || 40,
-    orgs: orgSet.size || 3,
-    stars: totalStars,
-    languages,
-    languageCount: langCount.size,
-    topLanguages: languages.slice(0, 5),
-  };
+const totalRepos = projects.length || 40;
+const totalOrgs = orgRows.length || 3;
+const totalStars = projects.reduce((s, p) => s + (p.stars || 0), 0);
+const langSet = new Map<string, number>();
+for (const p of projects) {
+  const l = p.language || "Other";
+  langSet.set(l, (langSet.get(l) ?? 0) + 1);
 }
+const topLanguages = [...langSet.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l);
+const languageCount = langSet.size;
+const top3 = topLanguages.slice(0, 5);
 
-const stats = computeStats() as any;
-const totalRepos: number = stats.total ?? stats.totalRepos ?? allRepos.length ?? 40;
-const totalOrgs: number = stats.orgs ?? stats.totalOrgs ?? 3;
-const totalStars: number = stats.stars ?? stats.totalStars ?? allRepos.reduce((s, r) => s + r.stars, 0);
-const topLanguages: string[] = stats.topLanguages ?? stats.languages?.slice?.(0, 5) ?? ["TypeScript", "Python", "Dart"];
-const languageCount: number = stats.languageCount ?? stats.languages?.length ?? topLanguages.length;
-
-const searchPayload = allRepos.map((r) => ({
-  slug: r.slug, name: r.name, description: r.description,
-  topics: r.topics, language: r.language, stars: r.stars, updated: r.updatedAt,
-}));
+// Featured 6 (spec) — lib orders by featured_order; meta reports 8 flagged
+const featured = getFeatured().slice(0, 6);
+// Catalog SSR grid: all curated sorted by stars (SEO + no-JS)
+const catalogRepos = sortRepos(getCurated(), "stars");
 
 // ---------- orgs (real URLs, fixed brand colors) ----------
 const orgs = [
@@ -189,6 +106,7 @@ const faqs = [
       "Do not open a public issue for vulnerabilities. Email the maintainers via the address listed in the repository SECURITY.md, or use GitHub private vulnerability reporting. Include reproduction steps, affected versions, and impact. We acknowledge reports within 72 hours and publish fixes with credit.",
   },
 ];
+const faqItems = faqs.map((f) => ({ q: f.question, a: f.answer }));
 
 // ---------- JSON-LD ----------
 const orgJsonLd = {
@@ -215,17 +133,17 @@ const itemListJsonLd = {
   "@context": "https://schema.org",
   "@type": "ItemList",
   name: "Smart Team open-source repositories",
-  numberOfItems: allRepos.length,
-  itemListElement: allRepos.slice(0, 20).map((r, i) => ({
+  numberOfItems: projects.length,
+  itemListElement: sortRepos(projects, "stars").slice(0, 20).map((p, i) => ({
     "@type": "ListItem",
     position: i + 1,
     item: {
       "@type": "SoftwareSourceCode",
-      name: r.fullName,
-      description: r.description,
-      codeRepository: r.url,
-      programmingLanguage: r.language,
-      keywords: r.topics.join(", "),
+      name: p.full_name,
+      description: displayDescription(p),
+      codeRepository: p.html_url,
+      programmingLanguage: p.language || "Other",
+      keywords: (p.topics || []).join(", "),
     },
   })),
 };
@@ -248,7 +166,7 @@ const description =
   title={title}
   description={description}
   canonical={SITE + "/"}
-  image={SITE + "/og/cover.png"}
+  ogImage={SITE + "/og/cover.png"}
   jsonLd={[orgJsonLd, websiteJsonLd, itemListJsonLd, faqJsonLd]}
 >
   <!-- ================= HERO 60/40 ================= -->
@@ -289,7 +207,7 @@ const description =
             <dd class="font-display text-2xl font-bold text-magenta glow-magenta md:text-3xl">{languageCount}</dd>
           </div>
         </dl>
-        <p class="mt-3 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">Top: {topLanguages.join(" · ")}</p>
+        <p class="mt-3 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">Top: {top3.join(" · ")}</p>
       </div>
 
       <!-- HUD panel (hidden on small screens per responsive strategy) -->
@@ -303,7 +221,7 @@ const description =
             <p><span class="text-muted-fg">orgs:</span> <span class="text-neon">thesmarter</span> <span class="text-cyan">adaasystem</span> <span class="text-magenta">detaelectpro</span></p>
             <p><span class="text-muted-fg">repos:</span> <span class="text-fg">{totalRepos} indexed</span></p>
             <p><span class="text-muted-fg">stars:</span> <span class="text-fg">{totalStars} total</span></p>
-            <p><span class="text-muted-fg">langs:</span> <span class="text-fg">{topLanguages.slice(0,3).join(" / ")}</span></p>
+            <p><span class="text-muted-fg">langs:</span> <span class="text-fg">{top3.slice(0,3).join(" / ")}</span></p>
             <p><span class="text-muted-fg">build:</span> <span class="text-neon">static // astro5</span></p>
             <p><span class="text-muted-fg">feed:</span> <a href="/rss.xml">/rss.xml</a> · <a href="/search-index.json">/search-index.json</a></p>
           </div>
@@ -383,11 +301,11 @@ const description =
           <h2 id="featured-title" class="text-4xl font-bold uppercase md:text-5xl">Flagship <span class="text-neon glow">repos</span></h2>
           <a href="#catalog" class="font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">Full catalog →</a>
         </div>
-        <p class="mt-4 max-w-3xl text-fg/80">Six builds that best represent the collective — most starred, most reused, most instructive. The middle build is scaled up: start there.</p>
+        <p class="mt-4 max-w-3xl text-fg/80">Six builds that best represent the collective — most reused, most instructive. The middle build is scaled up: start there.</p>
         <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
           {featured.map((repo, i) => (
             <div class={i === 1 || i === 4 ? "md:scale-[1.04] md:-rotate-1" : i === 2 || i === 5 ? "md:rotate-1" : ""}>
-              <RepoCard repo={repo} featured={true} />
+              <RepoCard repo={repo} />
             </div>
           ))}
         </div>
@@ -405,10 +323,10 @@ const description =
         the grid below is server-rendered for SEO and no-JS readers.
       </p>
       <div class="mt-8">
-        <SearchIsland repos={searchPayload} />
+        <SearchIsland initialRepos={projects} />
       </div>
       <div id="catalog-grid" class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {allRepos.map((repo) => (
+        {catalogRepos.map((repo) => (
           <RepoCard repo={repo} />
         ))}
       </div>
@@ -489,7 +407,7 @@ const description =
         <a href="/faq/" class="font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">Standalone FAQ page →</a>
       </div>
       <div class="mt-8">
-        <FaqAccordion faqs={faqs} id="faq-list" />
+        <FaqAccordion items={faqItems} idPrefix="faq" />
       </div>
     </div>
   </section>
