@@ -1,1 +1,0 @@
-# thesmarter.github.io
