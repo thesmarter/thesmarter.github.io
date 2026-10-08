@@ -1,0 +1,538 @@
+---
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  ogImage?: string;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
+}
+
+const SITE = "https://thesmarter.github.io";
+const SITE_NAME = "SMART_TEAM_";
+
+const {
+  title,
+  description = "SMART_TEAM_ — open-source cyberpunk collective. Explore hacked feeds, neon systems, and community-built tech.",
+  canonical = SITE + "/",
+  ogImage = SITE + "/og/default.png",
+  jsonLd,
+  noindex = false,
+} = Astro.props;
+
+const pageTitle = title.includes(SITE_NAME) ? title : `${title} // ${SITE_NAME}`;
+const robots = noindex ? "noindex, nofollow" : "index, follow";
+const jsonLdBlocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+
+const navLinks = [
+  { href: "/#about", label: "ABOUT" },
+  { href: "/#featured", label: "FEATURED" },
+  { href: "/#catalog", label: "CATALOG" },
+  { href: "/#orgs", label: "ORGS" },
+  { href: "/#contribute", label: "CONTRIBUTE" },
+  { href: "/#faq", label: "FAQ" },
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta name="robots" content={robots} />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="generator" content={Astro.generator} />
+
+    <!-- Canonical + language -->
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="x-default" href={canonical} />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <!-- Feeds, sitemap, LLM context -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <link rel="alternate" type="text/plain" title="LLM context" href="/llms.txt" />
+    <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml" />
+
+    <!-- Fonts: preconnect for the Google Fonts import in tokens.css -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    {jsonLdBlocks.map((block) => (
+      <script type="application/ld+json" set:html={JSON.stringify(block)} />
+    ))}
+  </head>
+
+  <body class="bg-grid">
+    <a href="#main-content" class="skip-link">Skip to content</a>
+
+    <!-- CRT overlays -->
+    <div class="scanline-overlay" aria-hidden="true"></div>
+    <div class="scanline-beam" aria-hidden="true"></div>
+    <div class="circuit-bg" aria-hidden="true"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="site-header">
+      <div class="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6">
+        <a href="/#" class="logo" aria-label="SMART_TEAM_ home">
+          <span class="logo-prompt" aria-hidden="true">&gt;</span>
+          <span>SMART_TEAM<span class="logo-cursor" aria-hidden="true">_</span></span>
+        </a>
+
+        <nav class="nav-desktop" aria-label="Primary">
+          <ul>
+            {navLinks.map((link) => (
+              <li>
+                <a href={link.href}>{link.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <div class="flex items-center gap-3">
+          <a href="/#catalog" class="cta cyber-chamfer-sm">
+            <span aria-hidden="true">&gt;</span> EXPLORE
+          </a>
+          <button
+            type="button"
+            class="nav-toggle"
+            aria-expanded="false"
+            aria-controls="mobile-nav"
+            aria-label="Toggle navigation"
+          >
+            <span aria-hidden="true" class="nav-toggle-bars"></span>
+          </button>
+        </div>
+      </div>
+
+      <nav id="mobile-nav" class="nav-mobile" aria-label="Mobile" hidden>
+        <ul>
+          {navLinks.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+          <li>
+            <a href="/#catalog" class="mobile-cta">&gt; EXPLORE_</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- ============ MAIN ============ -->
+    <main id="main-content" class="relative z-10">
+      <slot />
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site-footer" aria-label="Footer">
+      <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-4 py-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
+        <!-- Brand -->
+        <div>
+          <p class="footer-logo" aria-label="SMART_TEAM_">
+            <span aria-hidden="true" class="logo-prompt">&gt;</span> SMART_TEAM<span class="logo-cursor" aria-hidden="true">_</span>
+          </p>
+          <p class="footer-desc">
+            High-tech, low-life. An open-source collective broadcasting from the sprawl — neon systems, hacked feeds, community-built tech.
+          </p>
+          <p class="section-label mt-4" aria-label="System status">
+            <span class="status-dot" aria-hidden="true"></span> ALL SYSTEMS NOMINAL
+          </p>
+        </div>
+
+        <!-- Index -->
+        <nav aria-label="Index">
+          <p class="footer-heading">// INDEX</p>
+          <ul class="footer-links">
+            {navLinks.map((link) => (
+              <li><a href={link.href}>{link.label}</a></li>
+            ))}
+          </ul>
+        </nav>
+
+        <!-- Resources -->
+        <nav aria-label="Resources">
+          <p class="footer-heading">// RESOURCES</p>
+          <ul class="footer-links">
+            <li><a href="/sitemap-index.xml">SITEMAP</a></li>
+            <li><a href="/rss.xml">RSS_FEED</a></li>
+            <li><a href="/llms.txt">LLMS.TXT</a></li>
+            <li><a href="https://github.com/thesmarter">GITHUB_ORG</a></li>
+            <li><a href="/#contribute">CONTRIBUTE</a></li>
+          </ul>
+        </nav>
+
+        <!-- Status -->
+        <div>
+          <p class="footer-heading">// STATUS</p>
+          <dl class="status-list">
+            <div><dt>NET</dt><dd><span class="text-neon">ONLINE</span></dd></div>
+            <div><dt>BUILD</dt><dd>STATIC_EDGE</dd></div>
+            <div><dt>MODE</dt><dd>DARK_MANDATORY</dd></div>
+            <div><dt>A11Y</dt><dd>AA_CONTRAST</dd></div>
+          </dl>
+        </div>
+      </div>
+
+      <!-- System bar -->
+      <div class="system-bar">
+        <div class="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 sm:px-6">
+          <p class="system-bar-text">
+            SYS.ONLINE <span aria-hidden="true">//</span> <span id="sys-clock">00:00:00</span> <span aria-hidden="true">//</span> SCANLINES.ACTIVE
+          </p>
+          <p class="system-bar-text">© 2026 SMART_TEAM_ // HIGH-TECH_LOW-LIFE</p>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Back to top -->
+    <button type="button" id="back-to-top" class="back-to-top cyber-chamfer-sm" aria-label="Back to top" hidden>
+      <span aria-hidden="true">▲</span>
+    </button>
+
+    <script>
+      // Mobile nav toggle
+      const toggle = document.querySelector('.nav-toggle');
+      const mobileNav = document.getElementById('mobile-nav');
+      toggle?.addEventListener('click', () => {
+        const open = mobileNav?.hidden === false;
+        if (mobileNav) mobileNav.hidden = open;
+        toggle.setAttribute('aria-expanded', String(!open));
+        toggle.classList.toggle('is-open', !open);
+      });
+      mobileNav?.querySelectorAll('a').forEach((a) => {
+        a.addEventListener('click', () => {
+          if (mobileNav) mobileNav.hidden = true;
+          toggle?.setAttribute('aria-expanded', 'false');
+          toggle?.classList.remove('is-open');
+        });
+      });
+
+      // System clock (UTC, HH:MM:SS) — static text if JS disabled
+      const clock = document.getElementById('sys-clock');
+      const tick = () => {
+        if (!clock) return;
+        const d = new Date();
+        clock.textContent = d.toISOString().slice(11, 19) + ' UTC';
+      };
+      tick();
+      setInterval(tick, 1000);
+
+      // Back-to-top: show after 600px, smooth scroll (reduced-motion safe)
+      const btt = document.getElementById('back-to-top');
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const onScroll = () => {
+        if (!btt) return;
+        btt.hidden = window.scrollY < 600;
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+      btt?.addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+      });
+    </script>
+
+    <style>
+      .skip-link {
+        position: fixed;
+        top: -100px;
+        left: 1rem;
+        z-index: 200;
+        background: var(--neon);
+        color: var(--bg);
+        font-family: var(--font-accent);
+        font-size: 0.875rem;
+        letter-spacing: 0.15em;
+        text-decoration: none;
+        padding: 0.75rem 1.25rem;
+        transition: top 150ms ease;
+      }
+      .skip-link:focus-visible {
+        top: 1rem;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(10, 10, 15, 0.88);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid var(--border);
+      }
+      .site-header::after {
+        content: "";
+        display: block;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--neon), transparent);
+        opacity: 0.5;
+      }
+
+      .logo {
+        font-family: var(--font-display);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        color: var(--fg);
+        text-decoration: none;
+        font-size: 1rem;
+        white-space: nowrap;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .logo:hover {
+        color: var(--neon);
+        text-shadow: 0 0 10px rgba(0, 255, 136, 0.7);
+      }
+      .logo-prompt {
+        color: var(--neon);
+        margin-right: 0.4rem;
+      }
+      .logo-cursor {
+        color: var(--neon);
+        animation: blink 1s step-end infinite;
+      }
+
+      .nav-desktop {
+        display: none;
+      }
+      .nav-desktop ul {
+        display: flex;
+        gap: 1.5rem;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+      }
+      .nav-desktop a {
+        font-family: var(--font-accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
+        color: var(--muted-fg);
+        text-decoration: none;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+      }
+      .nav-desktop a:hover {
+        color: var(--neon);
+        text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+      }
+      @media (min-width: 1024px) {
+        .nav-desktop { display: block; }
+      }
+
+      .cta {
+        font-family: var(--font-accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.2em;
+        background: var(--neon);
+        color: var(--bg);
+        text-decoration: none;
+        font-weight: 700;
+        padding: 0.65rem 1.25rem;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: var(--transition-digital);
+      }
+      .cta:hover {
+        color: var(--bg);
+        filter: brightness(1.1);
+        box-shadow: var(--box-shadow-neon-lg);
+        text-shadow: none;
+      }
+      @media (max-width: 400px) {
+        .cta { padding: 0.65rem 0.9rem; }
+      }
+
+      .nav-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        background: transparent;
+        border: 1px solid var(--border);
+        cursor: pointer;
+      }
+      .nav-toggle:hover {
+        border-color: var(--neon);
+        box-shadow: var(--box-shadow-neon-sm);
+      }
+      .nav-toggle-bars,
+      .nav-toggle-bars::before,
+      .nav-toggle-bars::after {
+        content: "";
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: var(--neon);
+        position: relative;
+        transition: var(--transition-digital);
+      }
+      .nav-toggle-bars::before { position: absolute; top: -6px; left: 0; }
+      .nav-toggle-bars::after { position: absolute; top: 6px; left: 0; }
+      .nav-toggle.is-open .nav-toggle-bars { background: transparent; }
+      .nav-toggle.is-open .nav-toggle-bars::before { top: 0; transform: rotate(45deg); }
+      .nav-toggle.is-open .nav-toggle-bars::after { top: 0; transform: rotate(-45deg); }
+      @media (min-width: 1024px) {
+        .nav-toggle { display: none; }
+      }
+
+      .nav-mobile {
+        border-top: 1px solid var(--border);
+        background: rgba(10, 10, 15, 0.97);
+      }
+      .nav-mobile ul {
+        list-style: none;
+        margin: 0;
+        padding: 0.5rem 1rem 1rem;
+      }
+      .nav-mobile a {
+        display: flex;
+        align-items: center;
+        min-height: 44px;
+        font-family: var(--font-accent);
+        font-size: 0.9rem;
+        letter-spacing: 0.2em;
+        color: var(--fg);
+        text-decoration: none;
+        border-bottom: 1px solid var(--border);
+      }
+      .nav-mobile a:hover { color: var(--neon); }
+      .mobile-cta { color: var(--neon); }
+
+      .site-footer {
+        position: relative;
+        z-index: 10;
+        border-top: 1px solid var(--border);
+        background: rgba(18, 18, 26, 0.85);
+        backdrop-filter: blur(8px);
+        margin-top: 4rem;
+      }
+      .footer-logo {
+        font-family: var(--font-display);
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        margin: 0 0 0.75rem;
+      }
+      .footer-desc {
+        color: var(--muted-fg);
+        font-size: 0.875rem;
+        max-width: 32ch;
+        margin: 0;
+      }
+      .footer-heading {
+        font-family: var(--font-accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.25em;
+        color: var(--neon);
+        margin: 0 0 1rem;
+      }
+      .footer-links {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.25rem;
+      }
+      .footer-links a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 44px;
+        font-family: var(--font-accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.18em;
+        color: var(--muted-fg);
+        text-decoration: none;
+      }
+      .footer-links a:hover {
+        color: var(--neon);
+        text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+      }
+      .status-dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: var(--neon);
+        box-shadow: var(--box-shadow-neon-sm);
+        margin-right: 0.5rem;
+        animation: blink 2s step-end infinite;
+      }
+      .status-list {
+        margin: 0;
+        font-family: var(--font-accent);
+        font-size: 0.8rem;
+        letter-spacing: 0.15em;
+      }
+      .status-list > div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.4rem 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .status-list dt { color: var(--muted-fg); }
+      .status-list dd { margin: 0; color: var(--fg); }
+      .text-neon { color: var(--neon); }
+
+      .system-bar {
+        border-top: 1px solid var(--border);
+        background: var(--bg);
+      }
+      .system-bar-text {
+        margin: 0;
+        font-family: var(--font-accent);
+        font-size: 0.7rem;
+        letter-spacing: 0.2em;
+        color: var(--muted-fg);
+      }
+      .system-bar-text #sys-clock { color: var(--neon); }
+
+      .back-to-top {
+        position: fixed;
+        right: 1.25rem;
+        bottom: 1.25rem;
+        z-index: 110;
+        width: 48px;
+        height: 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--card);
+        color: var(--neon);
+        border: 1px solid var(--neon);
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      .back-to-top:hover {
+        background: var(--neon);
+        color: var(--bg);
+        box-shadow: var(--box-shadow-neon-lg);
+      }
+      .back-to-top[hidden] { display: none; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .logo-cursor, .status-dot { animation: none; }
+      }
+    </style>
+  </body>
+</html>

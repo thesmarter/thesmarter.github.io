@@ -1,0 +1,496 @@
+---
+/**
+ * Smart Team — Single-page hub (/)
+ *
+ * Owned scope: src/pages/* only. Do NOT edit layouts/components/lib here.
+ *
+ * Contracts assumed (owned by sibling agents):
+ * - src/layouts/Base.astro props: { title, description, canonical?, image?, jsonLd? }
+ * - src/components/RepoCard.astro props: { repo, variant?: "default" | "holographic", featured?: boolean }
+ * - src/components/SearchIsland.astro props: { repos: SearchEntry[] } (vanilla JS island, no client: directive needed)
+ * - src/components/FaqAccordion.astro props: { faqs: { question, answer }[], id?: string }
+ * - src/lib/repos.ts: getAllRepos() | getRepos() | allRepos | repos; getFeaturedRepos(n?) | getStats()
+ * - src/data/repos.json: Repo[] or { repos: Repo[] }
+ */
+import Base from "../layouts/Base.astro";
+import RepoCard from "../components/RepoCard.astro";
+import SearchIsland from "../components/SearchIsland.astro";
+import FaqAccordion from "../components/FaqAccordion.astro";
+import * as reposLib from "../lib/repos.js";
+import reposRaw from "../data/repos.json";
+
+const SITE = "https://thesmarter.github.io";
+
+// ---------- resilient data resolution ----------
+const libAny = reposLib as unknown as Record<string, any>;
+
+function rawList(): any[] {
+  if (Array.isArray(reposRaw)) return reposRaw as any[];
+  const r = reposRaw as unknown as Record<string, any>;
+  if (r && Array.isArray(r.repos)) return r.repos;
+  if (r && Array.isArray(r.items)) return r.items;
+  return [];
+}
+
+function resolveAll(): any[] {
+  try {
+    if (typeof libAny.getAllRepos === "function") return libAny.getAllRepos();
+    if (typeof libAny.getRepos === "function") return libAny.getRepos();
+    if (typeof libAny.getAllReposSorted === "function") return libAny.getAllReposSorted();
+    if (Array.isArray(libAny.allRepos)) return libAny.allRepos;
+    if (Array.isArray(libAny.repos)) return libAny.repos;
+  } catch { /* fall through to JSON */ }
+  return rawList();
+}
+
+function norm(r: any, i: number) {
+  const slug =
+    r.slug ?? r.name?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? `repo-${i}`;
+  const name = r.name ?? r.fullName?.split("/")?.pop() ?? slug;
+  const org =
+    r.org ?? r.owner ?? r.fullName?.split("/")?.[0] ?? r.full_name?.split("/")?.[0] ?? "thesmarter";
+  const url = r.url ?? r.html_url ?? r.htmlUrl ?? `https://github.com/${org}/${name}`;
+  return {
+    slug: String(slug),
+    name: String(name),
+    fullName: String(r.fullName ?? r.full_name ?? `${org}/${name}`),
+    description: String(r.description ?? r.tagline ?? "Open-source project from Smart Team."),
+    url: String(url),
+    homepage: r.homepage ?? r.homepageUrl ?? r.demoUrl ?? r.demo ?? "",
+    demoUrl: String(r.demoUrl ?? r.demo ?? r.homepage ?? ""),
+    language: r.language ?? r.primaryLanguage ?? "TypeScript",
+    stars: Number(r.stars ?? r.stargazers_count ?? r.stargazers ?? 0),
+    forks: Number(r.forks ?? r.forks_count ?? 0),
+    topics: Array.isArray(r.topics) ? r.topics.map(String) : [],
+    updatedAt: String(r.updatedAt ?? r.updated_at ?? r.pushed_at ?? new Date().toISOString()),
+    org: String(org),
+    featured: Boolean(r.featured ?? false),
+  };
+}
+
+const allRepos = resolveAll().map(norm);
+
+function resolveFeatured() {
+  try {
+    if (typeof libAny.getFeaturedRepos === "function") {
+      const f = libAny.getFeaturedRepos(6);
+      if (Array.isArray(f) && f.length) return f.map(norm);
+    }
+  } catch { /* ignore */ }
+  const flagged = allRepos.filter((r) => (r as any).featured);
+  const pool = flagged.length >= 6 ? flagged : [...flagged, ...allRepos.filter((r) => !(r as any).featured)];
+  return [...pool].sort((a, b) => b.stars - a.stars).slice(0, 6);
+}
+
+const featured = resolveFeatured();
+
+// ---------- stats (40 repos, 3 orgs, stars sum, languages) ----------
+function computeStats() {
+  try {
+    if (typeof libAny.getStats === "function") return libAny.getStats();
+    if (typeof libAny.getRepoStats === "function") return libAny.getRepoStats();
+    if (libAny.stats && typeof libAny.stats === "object") return libAny.stats;
+  } catch { /* ignore */ }
+  const totalStars = allRepos.reduce((s, r) => s + (r.stars || 0), 0);
+  const orgSet = new Set(allRepos.map((r) => r.org.toLowerCase()));
+  // Guarantee the 3 known orgs even before fetch completes
+  ["thesmarter", "adaasystem", "detaelectpro"].forEach((o) => orgSet.add(o));
+  const langCount = new Map<string, number>();
+  for (const r of allRepos) if (r.language) langCount.set(r.language, (langCount.get(r.language) ?? 0) + 1);
+  const languages = [...langCount.entries()].sort((a, b) => b[1] - a[1]).map(([l]) => l);
+  return {
+    total: allRepos.length || 40,
+    orgs: orgSet.size || 3,
+    stars: totalStars,
+    languages,
+    languageCount: langCount.size,
+    topLanguages: languages.slice(0, 5),
+  };
+}
+
+const stats = computeStats() as any;
+const totalRepos: number = stats.total ?? stats.totalRepos ?? allRepos.length ?? 40;
+const totalOrgs: number = stats.orgs ?? stats.totalOrgs ?? 3;
+const totalStars: number = stats.stars ?? stats.totalStars ?? allRepos.reduce((s, r) => s + r.stars, 0);
+const topLanguages: string[] = stats.topLanguages ?? stats.languages?.slice?.(0, 5) ?? ["TypeScript", "Python", "Dart"];
+const languageCount: number = stats.languageCount ?? stats.languages?.length ?? topLanguages.length;
+
+const searchPayload = allRepos.map((r) => ({
+  slug: r.slug, name: r.name, description: r.description,
+  topics: r.topics, language: r.language, stars: r.stars, updated: r.updatedAt,
+}));
+
+// ---------- orgs (real URLs, fixed brand colors) ----------
+const orgs = [
+  {
+    name: "thesmarter",
+    tag: "CORE // PLATFORM",
+    blurb: "Core platform, developer tooling, and this open-source hub. Shared libraries, templates, and infrastructure every other org builds on.",
+    url: "https://github.com/thesmarter",
+    accent: "#00ff88",
+    glow: "glow-box",
+    focus: "Core services & platform",
+  },
+  {
+    name: "AdaaSystem",
+    tag: "ERP // BUSINESS",
+    blurb: "ERP and business systems — HR, accounting, inventory, and workflow automation for real organizations.",
+    url: "https://github.com/AdaaSystem",
+    accent: "#00d4ff",
+    glow: "glow-box-cyan",
+    focus: "ERP modules & back-office",
+  },
+  {
+    name: "DetaElectPro",
+    tag: "MEDICAL // SIGNAL",
+    blurb: "Medical and electrophysiology tooling — signal acquisition, visualization, and clinical utilities.",
+    url: "https://github.com/DetaElectPro",
+    accent: "#ff00ff",
+    glow: "glow-box-magenta",
+    focus: "Medical & electrophysiology",
+  },
+];
+
+// ---------- FAQ: 7 Q&A ----------
+const faqs = [
+  {
+    question: "What is Smart Team?",
+    answer:
+      "Smart Team is an open-source collective operating across three GitHub organizations — thesmarter (core platform), AdaaSystem (ERP and business systems), and DetaElectPro (medical and electrophysiology). We build practical, production-grade software and publish it openly so anyone can inspect, reuse, and improve it.",
+  },
+  {
+    question: "Where is the team based?",
+    answer:
+      "We are a distributed, remote-first collective with roots in Sudan and collaborators across multiple time zones. All coordination happens in the open on GitHub — issues, discussions, and pull requests are our headquarters.",
+  },
+  {
+    question: "What kinds of projects do you maintain?",
+    answer:
+      "Forty public repositories spanning developer tooling, Astro/Tailwind starters, ERP modules (HR, inventory, accounting), medical signal tooling, mobile apps, and automation scripts. Each repository page lists its language, topics, stars, and live links so you can judge fit in seconds.",
+  },
+  {
+    question: "How can I contribute?",
+    answer:
+      "Pick an issue labelled good-first-issue, fork the repo, create a focused branch, and open a pull request. Clone with git clone, push your branch, then run gh pr create. Maintainers review every PR — small, well-tested changes merge fastest. See the Contribute section below for exact commands.",
+  },
+  {
+    question: "What licenses do you use?",
+    answer:
+      "Most projects use permissive licenses (MIT or Apache-2.0) so you can use them commercially with attribution. A few ERP and medical packages use copyleft or custom terms where data-safety demands it. Every repository declares its license in its root LICENSE file and on its repo page.",
+  },
+  {
+    question: "Do you offer commercial support?",
+    answer:
+      "Yes. For deployment, customization, training, and SLAs — especially around AdaaSystem ERP and DetaElectPro clinical tooling — open an issue or discussion on the relevant repository with the tag commercial-support. We scope fixed-price and retainer engagements in the open wherever possible.",
+  },
+  {
+    question: "How do I report a security issue?",
+    answer:
+      "Do not open a public issue for vulnerabilities. Email the maintainers via the address listed in the repository SECURITY.md, or use GitHub private vulnerability reporting. Include reproduction steps, affected versions, and impact. We acknowledge reports within 72 hours and publish fixes with credit.",
+  },
+];
+
+// ---------- JSON-LD ----------
+const orgJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Smart Team",
+  alternateName: "thesmarter",
+  url: SITE + "/",
+  logo: SITE + "/og/cover.png",
+  sameAs: ["https://github.com/thesmarter", "https://github.com/AdaaSystem", "https://github.com/DetaElectPro"],
+};
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Smart Team — Open Source Hub",
+  url: SITE + "/",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: SITE + "/?q={search_term_string}" },
+    "query-input": "required name=search_term_string",
+  },
+};
+const itemListJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  name: "Smart Team open-source repositories",
+  numberOfItems: allRepos.length,
+  itemListElement: allRepos.slice(0, 20).map((r, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    item: {
+      "@type": "SoftwareSourceCode",
+      name: r.fullName,
+      description: r.description,
+      codeRepository: r.url,
+      programmingLanguage: r.language,
+      keywords: r.topics.join(", "),
+    },
+  })),
+};
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((f) => ({
+    "@type": "Question",
+    name: f.question,
+    acceptedAnswer: { "@type": "Answer", text: f.answer },
+  })),
+};
+
+const title = "Smart Team — Open Source Hub | 40 Repos Across 3 Orgs";
+const description =
+  "Smart Team open-source hub: 40 public repositories across thesmarter, AdaaSystem, and DetaElectPro — developer tooling, ERP systems, and medical software. Search the catalog, read docs, and contribute.";
+---
+
+<Base
+  title={title}
+  description={description}
+  canonical={SITE + "/"}
+  image={SITE + "/og/cover.png"}
+  jsonLd={[orgJsonLd, websiteJsonLd, itemListJsonLd, faqJsonLd]}
+>
+  <!-- ================= HERO 60/40 ================= -->
+  <section class="relative overflow-hidden bg-grid" aria-labelledby="hero-title">
+    <div class="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-5 pb-16 pt-16 md:pt-24 lg:grid-cols-[60%_40%] lg:px-8">
+      <div>
+        <p class="section-label terminal-prefix">SYS.BOOT // SMART_TEAM.HUB v5.0</p>
+        <h1 id="hero-title" class="mt-4 text-5xl font-black uppercase leading-none tracking-widest md:text-7xl lg:text-8xl">
+          <span class="cyber-glitch" data-text="SMART TEAM">SMART TEAM</span>
+          <span class="mt-2 block text-2xl font-bold tracking-[0.2em] text-neon glow md:text-3xl">OPEN SOURCE HUB<span class="blink" aria-hidden="true">_</span></span>
+        </h1>
+        <p class="mt-6 max-w-2xl text-base leading-relaxed text-fg/90 md:text-lg">
+          Forty public repositories across three GitHub organizations — core platform,
+          ERP business systems, and medical tooling. Auditable code, permissive licenses,
+          and a catalog you can search in milliseconds.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a href="#catalog" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg transition hover:brightness-110 hover:glow-box-lg focus-visible:outline-none">Browse catalog</a>
+          <a href="#contribute" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-magenta px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-magenta transition hover:bg-magenta hover:text-bg hover:glow-box-magenta">Contribute</a>
+          <a href="#faq" class="inline-flex min-h-[44px] items-center px-4 py-3 font-accent text-sm uppercase tracking-[0.2em] text-muted-fg transition hover:text-neon">FAQ ↓</a>
+        </div>
+        <!-- stats -->
+        <dl class="mt-10 flex divide-x divide-border border-y border-border bg-card/60 backdrop-blur">
+          <div class="flex-1 px-4 py-4 text-center md:px-6">
+            <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Repos</dt>
+            <dd class="font-display text-2xl font-bold text-neon glow-sm md:text-3xl">{totalRepos}</dd>
+          </div>
+          <div class="flex-1 px-4 py-4 text-center md:px-6">
+            <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Orgs</dt>
+            <dd class="font-display text-2xl font-bold text-fg md:text-3xl">{totalOrgs}</dd>
+          </div>
+          <div class="flex-1 px-4 py-4 text-center md:px-6">
+            <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Stars</dt>
+            <dd class="font-display text-2xl font-bold text-cyan glow-cyan md:text-3xl">{totalStars}</dd>
+          </div>
+          <div class="flex-1 px-4 py-4 text-center md:px-6">
+            <dt class="font-accent text-[0.7rem] uppercase tracking-[0.2em] text-muted-fg">Languages</dt>
+            <dd class="font-display text-2xl font-bold text-magenta glow-magenta md:text-3xl">{languageCount}</dd>
+          </div>
+        </dl>
+        <p class="mt-3 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">Top: {topLanguages.join(" · ")}</p>
+      </div>
+
+      <!-- HUD panel (hidden on small screens per responsive strategy) -->
+      <aside class="hidden lg:block" aria-label="System status">
+        <div class="hud-corners cyber-chamfer border border-neon/30 bg-muted/30 p-6 backdrop-blur glow-box">
+          <div class="flex items-center justify-between border-b border-border pb-3">
+            <p class="font-accent text-xs uppercase tracking-[0.25em] text-neon">● LIVE_FEED</p>
+            <p class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">hub v5.0</p>
+          </div>
+          <div class="mt-4 space-y-3 font-mono text-sm">
+            <p><span class="text-muted-fg">orgs:</span> <span class="text-neon">thesmarter</span> <span class="text-cyan">adaasystem</span> <span class="text-magenta">detaelectpro</span></p>
+            <p><span class="text-muted-fg">repos:</span> <span class="text-fg">{totalRepos} indexed</span></p>
+            <p><span class="text-muted-fg">stars:</span> <span class="text-fg">{totalStars} total</span></p>
+            <p><span class="text-muted-fg">langs:</span> <span class="text-fg">{topLanguages.slice(0,3).join(" / ")}</span></p>
+            <p><span class="text-muted-fg">build:</span> <span class="text-neon">static // astro5</span></p>
+            <p><span class="text-muted-fg">feed:</span> <a href="/rss.xml">/rss.xml</a> · <a href="/search-index.json">/search-index.json</a></p>
+          </div>
+          <div class="mt-5 border border-border bg-bg p-4 font-mono text-xs leading-relaxed">
+            <p class="text-muted-fg">$ smartteam status --open</p>
+            <p class="text-neon">✓ {totalRepos} repos · {totalOrgs} orgs · {totalStars} ★</p>
+            <p class="text-fg">catalog ready — query in &lt;50ms<span class="blink">▊</span></p>
+          </div>
+          <nav class="mt-5 grid grid-cols-2 gap-2 font-accent text-[0.7rem] uppercase tracking-[0.2em]" aria-label="Quick jumps">
+            <a href="#about" class="border border-border px-3 py-2 text-center text-muted-fg hover:border-neon hover:text-neon">#about</a>
+            <a href="#featured" class="border border-border px-3 py-2 text-center text-muted-fg hover:border-neon hover:text-neon">#featured</a>
+            <a href="#catalog" class="border border-border px-3 py-2 text-center text-muted-fg hover:border-neon hover:text-neon">#catalog</a>
+            <a href="#faq" class="border border-border px-3 py-2 text-center text-muted-fg hover:border-neon hover:text-neon">#faq</a>
+          </nav>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ================= ABOUT split + terminal overlap ================= -->
+  <section id="about" class="relative scroll-mt-24 py-24 md:py-32" aria-labelledby="about-title">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <p class="section-label terminal-prefix">01 // WHO_WE_ARE</p>
+      <div class="mt-4 grid grid-cols-1 gap-10 lg:grid-cols-2 lg:gap-14">
+        <div>
+          <h2 id="about-title" class="text-4xl font-bold uppercase md:text-5xl">Three orgs.<br /><span class="text-neon glow">One open standard.</span></h2>
+          <p class="mt-6 leading-relaxed text-fg/85">
+            Smart Team publishes everything we can in the open. <strong class="text-fg">thesmarter</strong> maintains
+            the core platform and shared tooling; <strong class="text-cyan">AdaaSystem</strong> ships ERP modules that run
+            real businesses; <strong class="text-magenta">DetaElectPro</strong> builds medical and signal-processing software
+            where correctness matters most.
+          </p>
+          <p class="mt-4 leading-relaxed text-fg/85">
+            Every repository carries a declared license, a topic map, and a live update feed. No black boxes —
+            clone anything, read the history, and hold us accountable line by line.
+          </p>
+          <ul class="mt-6 space-y-2 font-mono text-sm text-fg/80">
+            <li><span class="text-neon">▸</span> Permissive-first licensing (MIT / Apache-2.0 where possible)</li>
+            <li><span class="text-neon">▸</span> CI on every repo · semantic versioning · changelog discipline</li>
+            <li><span class="text-neon">▸</span> Docs and live demos linked from each repo page</li>
+          </ul>
+        </div>
+        <div class="relative">
+          <div class="cyber-chamfer border border-border bg-card p-6 md:p-8">
+            <h3 class="font-display text-xl font-semibold uppercase">Operating principles</h3>
+            <ol class="mt-4 space-y-4 text-sm leading-relaxed text-fg/85">
+              <li><strong class="text-neon">01 — Ship useful things.</strong> If it does not run in production, it does not ship.</li>
+              <li><strong class="text-cyan">02 — Document like outsiders.</strong> Every repo must be usable without asking us anything.</li>
+              <li><strong class="text-magenta">03 — Accept corrections.</strong> Issues and PRs are answered; good patches merge fast.</li>
+            </ol>
+          </div>
+          <!-- overlapping terminal -->
+          <div class="cyber-chamfer-glow -mt-6 ml-4 mr-4 md:-mt-8 md:ml-10">
+            <div class="cyber-chamfer border border-neon/40 bg-bg p-5 font-mono text-xs leading-relaxed shadow-[0_0_10px_#00ff88,0_0_20px_#00ff8860] md:text-sm">
+              <div class="mb-3 flex gap-1.5" aria-hidden="true">
+                <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></span>
+                <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#febc2e]"></span>
+                <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#28c840]"></span>
+              </div>
+              <p><span class="text-neon">$</span> <span class="text-fg">whoami --team</span></p>
+              <p class="text-muted-fg">smart-team // 3 orgs // 40 repos // remote-first</p>
+              <p><span class="text-neon">$</span> <span class="text-fg">cat manifesto.txt</span></p>
+              <p class="text-fg">open code. open docs. open review.<span class="blink">▊</span></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FEATURED (middle scale) ================= -->
+  <section id="featured" class="scroll-mt-24 border-y border-border bg-card/40 py-24 md:py-32" aria-labelledby="featured-title">
+    <div class="mx-auto max-w-7xl -skew-y-1 px-5 lg:px-8">
+      <div class="skew-y-1">
+        <p class="section-label terminal-prefix">02 // FEATURED_BUILDS</p>
+        <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
+          <h2 id="featured-title" class="text-4xl font-bold uppercase md:text-5xl">Flagship <span class="text-neon glow">repos</span></h2>
+          <a href="#catalog" class="font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">Full catalog →</a>
+        </div>
+        <p class="mt-4 max-w-3xl text-fg/80">Six builds that best represent the collective — most starred, most reused, most instructive. The middle build is scaled up: start there.</p>
+        <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {featured.map((repo, i) => (
+            <div class={i === 1 || i === 4 ? "md:scale-[1.04] md:-rotate-1" : i === 2 || i === 5 ? "md:rotate-1" : ""}>
+              <RepoCard repo={repo} featured={true} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CATALOG ================= -->
+  <section id="catalog" class="scroll-mt-24 py-24 md:py-32" aria-labelledby="catalog-title">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <p class="section-label terminal-prefix">03 // FULL_CATALOG</p>
+      <h2 id="catalog-title" class="mt-4 text-4xl font-bold uppercase md:text-5xl">Search all <span class="text-cyan glow-cyan">{totalRepos}</span> repos</h2>
+      <p class="mt-4 max-w-3xl text-fg/80">
+        Filter by name, topic, language, or organization. Results render instantly client-side;
+        the grid below is server-rendered for SEO and no-JS readers.
+      </p>
+      <div class="mt-8">
+        <SearchIsland repos={searchPayload} />
+      </div>
+      <div id="catalog-grid" class="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {allRepos.map((repo) => (
+          <RepoCard repo={repo} />
+        ))}
+      </div>
+      <p class="mt-6 font-mono text-xs text-muted-fg">
+        Machine-readable mirrors: <a href="/search-index.json">search-index.json</a> · <a href="/rss.xml">rss.xml</a> · <a href="/llms.txt">llms.txt</a>
+      </p>
+    </div>
+  </section>
+
+  <!-- ================= ORGS ================= -->
+  <section id="orgs" class="scroll-mt-24 border-y border-border bg-card/40 py-24 md:py-32" aria-labelledby="orgs-title">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <p class="section-label terminal-prefix">04 // ORGANIZATIONS</p>
+      <h2 id="orgs-title" class="mt-4 text-4xl font-bold uppercase md:text-5xl">Three orgs, <span class="text-neon glow">one graph</span></h2>
+      <div class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+        {orgs.map((org) => (
+          <article class={`cyber-chamfer border bg-bg p-6 transition hover:-translate-y-1 ${org.glow}`} style={`border-color: ${org.accent}55`} aria-label={org.name}>
+            <p class="font-accent text-[0.7rem] uppercase tracking-[0.25em]" style={`color: ${org.accent}`}>{org.tag}</p>
+            <h3 class="mt-2 font-display text-2xl font-bold uppercase">{org.name}</h3>
+            <p class="mt-1 font-mono text-xs text-muted-fg">{org.focus}</p>
+            <p class="mt-4 text-sm leading-relaxed text-fg/85">{org.blurb}</p>
+            <a href={org.url} target="_blank" rel="noopener noreferrer" class="mt-6 inline-flex min-h-[44px] items-center font-accent text-sm uppercase tracking-[0.2em] hover:glow-sm" style={`color: ${org.accent}`}>
+              github.com/{org.name} →
+            </a>
+          </article>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CONTRIBUTE ================= -->
+  <section id="contribute" class="scroll-mt-24 py-24 md:py-32" aria-labelledby="contribute-title">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <p class="section-label terminal-prefix">05 // JOIN_THE_FEED</p>
+      <h2 id="contribute-title" class="mt-4 text-4xl font-bold uppercase md:text-5xl">Contribute in <span class="text-neon glow">five commands</span></h2>
+      <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <div>
+          <p class="leading-relaxed text-fg/85">
+            No gatekeeping. Fork any repo, make a focused change with tests, and open a pull request.
+            Maintainers triage <strong class="text-fg">good-first-issue</strong> labels weekly — start there if you are new.
+          </p>
+          <ol class="mt-6 space-y-3 text-sm text-fg/85">
+            <li><span class="font-accent text-neon">01.</span> Fork + clone the repo you want to fix.</li>
+            <li><span class="font-accent text-neon">02.</span> Branch: <code class="bg-card px-1.5 py-0.5 text-neon">git checkout -b fix/short-name</code></li>
+            <li><span class="font-accent text-neon">03.</span> Commit small, test locally, push.</li>
+            <li><span class="font-accent text-neon">04.</span> Open a PR with <code class="bg-card px-1.5 py-0.5 text-neon">gh pr create</code>.</li>
+            <li><span class="font-accent text-neon">05.</span> Respond to review — we merge fast when CI is green.</li>
+          </ol>
+          <div class="mt-6 flex flex-wrap gap-4">
+            <a href="https://github.com/thesmarter" target="_blank" rel="noopener noreferrer" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg hover:brightness-110">Find an issue</a>
+            <a href="/faq/" class="inline-flex min-h-[44px] items-center font-accent text-sm uppercase tracking-[0.2em] text-muted-fg hover:text-neon">Contribution FAQ →</a>
+          </div>
+        </div>
+        <div class="cyber-chamfer border border-border bg-bg" role="region" aria-label="Contribution terminal">
+          <div class="flex items-center gap-1.5 border-b border-border px-5 py-3" aria-hidden="true">
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ff5f57]"></span>
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#febc2e]"></span>
+            <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#28c840]"></span>
+            <span class="ml-3 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">contribute.sh</span>
+          </div>
+          <pre class="overflow-x-auto p-5 font-mono text-xs leading-loose md:text-sm"><code><span class="text-neon">$</span> <span class="text-fg">git clone https://github.com/thesmarter/thesmarter.github.io.git</span>
+<span class="text-neon">$</span> <span class="text-fg">cd thesmarter.github.io</span>
+<span class="text-neon">$</span> <span class="text-fg">npm install &amp;&amp; npm run dev</span>
+<span class="text-muted-fg"># …make your change, commit, push…</span>
+<span class="text-neon">$</span> <span class="text-fg">gh pr create --title "feat: add my contribution"</span>
+<span class="text-neon">✓</span> <span class="text-fg">PR opened — CI running<span class="blink">▊</span></span></code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= FAQ ================= -->
+  <section id="faq" class="scroll-mt-24 border-t border-border bg-card/40 py-24 md:py-32" aria-labelledby="faq-title">
+    <div class="mx-auto max-w-7xl px-5 lg:px-8">
+      <p class="section-label terminal-prefix">06 // FAQ</p>
+      <div class="mt-4 flex flex-wrap items-end justify-between gap-4">
+        <h2 id="faq-title" class="text-4xl font-bold uppercase md:text-5xl">Questions, <span class="text-neon glow">answered</span></h2>
+        <a href="/faq/" class="font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">Standalone FAQ page →</a>
+      </div>
+      <div class="mt-8">
+        <FaqAccordion faqs={faqs} id="faq-list" />
+      </div>
+    </div>
+  </section>
+</Base>

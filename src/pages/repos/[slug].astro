@@ -1,0 +1,177 @@
+---
+/**
+ * Per-repo page (/repos/[slug])
+ * Contracts: Base { title, description, canonical, image, jsonLd },
+ * RepoCard { repo, variant }, repos.json + lib/repos.ts (see index.astro).
+ */
+import Base from "../../layouts/Base.astro";
+import RepoCard from "../../components/RepoCard.astro";
+import * as reposLib from "../../lib/repos.js";
+import reposRaw from "../../data/repos.json";
+
+const SITE = "https://thesmarter.github.io";
+
+export async function getStaticPaths() {
+  const libAny = reposLib as unknown as Record<string, any>;
+  let list: any[] = [];
+  try {
+    if (typeof libAny.getAllRepos === "function") list = libAny.getAllRepos();
+    else if (typeof libAny.getRepos === "function") list = libAny.getRepos();
+    else if (Array.isArray(libAny.allRepos)) list = libAny.allRepos;
+    else if (Array.isArray(libAny.repos)) list = libAny.repos;
+  } catch { /* fallback below */ }
+  if (!list.length) {
+    const r = reposRaw as unknown as any;
+    list = Array.isArray(r) ? r : r?.repos ?? r?.items ?? [];
+  }
+  return list.map((r: any, i: number) => {
+    const slug = String(
+      r.slug ?? r.name?.toLowerCase?.().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") ?? `repo-${i}`
+    );
+    return { params: { slug }, props: { repo: r } };
+  });
+}
+
+const { repo: raw } = Astro.props as { repo: any };
+const r: any = raw ?? {};
+
+function pick(...vals: any[]) {
+  for (const v of vals) if (v !== undefined && v !== null && v !== "") return v;
+  return "";
+}
+
+const slug = String(Astro.params.slug ?? r.slug ?? "repo");
+const name: string = pick(r.name, r.fullName?.split("/")?.pop(), slug);
+const org: string = pick(r.org, r.owner, r.fullName?.split("/")?.[0], r.full_name?.split("/")?.[0], "thesmarter");
+const fullName = pick(r.fullName, r.full_name, `${org}/${name}`);
+const description: string = pick(r.description, "Open-source project from Smart Team.");
+const url: string = pick(r.url, r.html_url, r.htmlUrl, `https://github.com/${org}/${name}`);
+const demoUrl: string = pick(r.demoUrl, r.demo, r.homepage, r.homepageUrl, "");
+const language: string = pick(r.language, r.primaryLanguage, "TypeScript");
+const stars: number = Number(pick(r.stars, r.stargazers_count, r.stargazers, 0));
+const topics: string[] = Array.isArray(r.topics) ? r.topics.map(String) : [];
+const updatedAt: string = pick(r.updatedAt, r.updated_at, r.pushed_at, new Date().toISOString());
+const license: string = pick(r.license, r.licenseName, r.spdx, "MIT");
+const canonical = `${SITE}/repos/${slug}/`;
+const installCmd = `git clone ${url}.git`;
+
+const normalized = {
+  slug, name, fullName, description, url,
+  homepage: demoUrl, demoUrl, language, stars,
+  forks: Number(pick(r.forks, r.forks_count, 0)),
+  topics, updatedAt, org, featured: Boolean(r.featured),
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareSourceCode",
+  name: fullName,
+  description,
+  codeRepository: url,
+  programmingLanguage: language,
+  keywords: topics.join(", "),
+  license: `https://spdx.org/licenses/${license}.html`,
+  author: { "@type": "Organization", name: "Smart Team", url: SITE + "/" },
+};
+---
+
+<Base
+  title={`${fullName} — Smart Team Open Source`}
+  description={description}
+  canonical={canonical}
+  image={`${SITE}/og/${slug}.png`}
+  jsonLd={jsonLd}
+>
+  <div class="mx-auto max-w-7xl px-5 py-12 lg:px-8">
+    <nav aria-label="Breadcrumb" class="font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">
+      <ol class="flex flex-wrap items-center gap-2">
+        <li><a href="/" class="hover:text-neon">Home</a></li>
+        <li aria-hidden="true">/</li>
+        <li><a href="/#catalog" class="hover:text-neon">Catalog</a></li>
+        <li aria-hidden="true">/</li>
+        <li aria-current="page" class="text-neon">{fullName}</li>
+      </ol>
+    </nav>
+
+    <div class="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[60%_40%]">
+      <div>
+        <p class="section-label terminal-prefix">REPO // {org.toUpperCase()}</p>
+        <h1 class="mt-3 font-display text-4xl font-black uppercase tracking-wide md:text-5xl">
+          <span class="cyber-glitch" data-text={name}>{name}</span>
+        </h1>
+        <p class="mt-4 max-w-2xl leading-relaxed text-fg/85">{description}</p>
+
+        <div class="mt-6 flex flex-wrap items-center gap-3 font-mono text-xs">
+          <span class="border border-border bg-card px-3 py-1.5 text-cyan">{language}</span>
+          <span class="border border-border bg-card px-3 py-1.5 text-fg">★ {stars}</span>
+          <span class="border border-border bg-card px-3 py-1.5 text-muted-fg">{license}</span>
+          <span class="border border-border bg-card px-3 py-1.5 text-muted-fg">updated {new Date(updatedAt).toISOString().slice(0, 10)}</span>
+        </div>
+
+        {topics.length > 0 && (
+          <ul class="mt-4 flex flex-wrap gap-2" aria-label="Topics">
+            {topics.map((t) => (
+              <li class="cyber-chamfer-sm border border-neon/30 bg-muted/40 px-3 py-1 font-mono text-xs text-neon">#{t}</li>
+            ))}
+          </ul>
+        )}
+
+        <div class="mt-8 flex flex-wrap gap-4">
+          <a href={url} target="_blank" rel="noopener noreferrer" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-neon bg-neon px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-bg hover:brightness-110">Code →</a>
+          {demoUrl && (
+            <a href={demoUrl} target="_blank" rel="noopener noreferrer" class="cyber-chamfer-sm inline-flex min-h-[44px] items-center border-2 border-magenta px-6 py-3 font-accent text-sm font-bold uppercase tracking-[0.2em] text-magenta hover:bg-magenta hover:text-bg">Live demo →</a>
+          )}
+        </div>
+
+        <div class="cyber-chamfer mt-8 border border-border bg-bg" aria-label="Install command">
+          <div class="border-b border-border px-5 py-2 font-accent text-xs uppercase tracking-[0.2em] text-muted-fg">install // clone</div>
+          <div class="flex items-center gap-3 p-5">
+            <code id="clone-cmd" class="flex-1 overflow-x-auto font-mono text-sm text-neon">{installCmd}</code>
+            <button
+              type="button"
+              data-copy-target="clone-cmd"
+              class="cyber-chamfer-sm min-h-[44px] min-w-[88px] border border-neon px-4 py-2 font-accent text-xs uppercase tracking-[0.2em] text-neon hover:bg-neon hover:text-bg"
+              aria-label="Copy clone command"
+            >Copy</button>
+          </div>
+        </div>
+
+        <a href="/#catalog" class="mt-8 inline-flex min-h-[44px] items-center font-accent text-sm uppercase tracking-[0.2em] text-cyan hover:text-neon">← Back to catalog</a>
+      </div>
+
+      <aside aria-label="Repository card">
+        <RepoCard repo={normalized} variant="holographic" featured={Boolean(r.featured)} />
+        <dl class="mt-6 border border-border bg-card/60 p-5 font-mono text-xs leading-relaxed">
+          <div class="flex justify-between gap-4 py-1"><dt class="text-muted-fg">org</dt><dd><a href={`https://github.com/${org}`} target="_blank" rel="noopener noreferrer">{org}</a></dd></div>
+          <div class="flex justify-between gap-4 py-1"><dt class="text-muted-fg">license</dt><dd class="text-fg">{license}</dd></div>
+          <div class="flex justify-between gap-4 py-1"><dt class="text-muted-fg">language</dt><dd class="text-fg">{language}</dd></div>
+          <div class="flex justify-between gap-4 py-1"><dt class="text-muted-fg">updated</dt><dd><time datetime={updatedAt}>{new Date(updatedAt).toISOString().slice(0, 10)}</time></dd></div>
+          <div class="flex justify-between gap-4 py-1"><dt class="text-muted-fg">permalink</dt><dd class="truncate"><a href={canonical}>{canonical.replace("https://", "")}</a></dd></div>
+        </dl>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll("[data-copy-target]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.getAttribute("data-copy-target");
+        const el = id ? document.getElementById(id) : null;
+        const text = el?.textContent?.trim() ?? "";
+        try {
+          await navigator.clipboard.writeText(text);
+          const orig = btn.textContent;
+          btn.textContent = "Copied ✓";
+          setTimeout(() => { btn.textContent = orig; }, 1600);
+        } catch {
+          const ta = document.createElement("textarea");
+          ta.value = text;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          ta.remove();
+        }
+      });
+    });
+  </script>
+</Base>

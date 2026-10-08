@@ -1,0 +1,339 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800;900&family=Share+Tech+Mono&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+
+/* ============================================================
+   Cyberpunk / Glitch — Design Tokens (the DNA)
+   Dark mode mandatory. Single source of truth for color,
+   type, glow, texture, motion.
+   ============================================================ */
+
+:root {
+  /* --- Colors --- */
+  --bg: #0a0a0f;
+  --card: #12121a;
+  --muted: #1c1c2e;
+  --fg: #e0e0e0;
+  --muted-fg: #6b7280;
+  --neon: #00ff88;
+  --magenta: #ff00ff;
+  --cyan: #00d4ff;
+  --border: #2a2a3a;
+  --danger: #ff3366;
+
+  /* Aliases matching component shorthand */
+  --background: var(--bg);
+  --foreground: var(--fg);
+  --input: #12121a;
+  --ring: #00ff88;
+  --accent: var(--neon);
+  --accent-secondary: var(--magenta);
+  --accent-tertiary: var(--cyan);
+
+  /* --- Neon glow shadows --- */
+  --box-shadow-neon: 0 0 5px #00ff88, 0 0 10px #00ff8840;
+  --box-shadow-neon-sm: 0 0 3px #00ff88, 0 0 6px #00ff8830;
+  --box-shadow-neon-lg: 0 0 10px #00ff88, 0 0 20px #00ff8860, 0 0 40px #00ff8830;
+  --box-shadow-neon-secondary: 0 0 5px #ff00ff, 0 0 20px #ff00ff60;
+  --box-shadow-neon-tertiary: 0 0 5px #00d4ff, 0 0 20px #00d4ff60;
+
+  /* --- Text glow --- */
+  --text-glow-neon: 0 0 10px rgba(0, 255, 136, 0.5);
+  --text-glow-neon-lg: 0 0 20px rgba(0, 255, 136, 0.3);
+
+  /* --- Typography --- */
+  --font-display: "Orbitron", "Share Tech Mono", ui-monospace, monospace;
+  --font-body: "JetBrains Mono", "Fira Code", "Consolas", ui-monospace, monospace;
+  --font-accent: "Share Tech Mono", ui-monospace, monospace;
+
+  /* --- Texture --- */
+  --scanlines: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.3) 2px,
+    rgba(0, 0, 0, 0.3) 4px
+  );
+  --grid-bg:
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+
+  /* --- Motion --- */
+  --transition-digital: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-snap: all 100ms steps(4);
+}
+
+/* ============================================================
+   Chamfered corners — brutalist HUD panels, not rounded cards
+   ============================================================ */
+
+.cyber-chamfer {
+  clip-path: polygon(
+    0 10px, 10px 0,
+    calc(100% - 10px) 0, 100% 10px,
+    100% calc(100% - 10px), calc(100% - 10px) 100%,
+    10px 100%, 0 calc(100% - 10px)
+  );
+}
+
+.cyber-chamfer-sm {
+  clip-path: polygon(
+    0 6px, 6px 0,
+    calc(100% - 6px) 0, 100% 6px,
+    100% calc(100% - 6px), calc(100% - 6px) 100%,
+    6px 100%, 0 calc(100% - 6px)
+  );
+}
+
+/* NOTE: clip-path clips box-shadow glow. Pair chamfered elements
+   with a chamfered wrapper or use drop-shadow filter for glow. */
+.cyber-chamfer-glow {
+  filter: drop-shadow(0 0 5px rgba(0, 255, 136, 0.55));
+}
+
+/* ============================================================
+   Glitch headline — chromatic aberration + corruption flicker
+   Usage: <span class="cyber-glitch" data-text="SAME TEXT">SAME TEXT</span>
+   ============================================================ */
+
+.cyber-glitch {
+  position: relative;
+  display: inline-block;
+  text-shadow:
+    -1px 0 var(--magenta),
+    1px 0 var(--cyan);
+  animation: rgbShift 4s infinite;
+  will-change: transform;
+}
+
+.cyber-glitch::before,
+.cyber-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: transparent;
+}
+
+.cyber-glitch::before {
+  color: var(--fg);
+  text-shadow: -2px 0 var(--magenta);
+  animation: glitch-anim-1 2.8s infinite linear alternate-reverse;
+}
+
+.cyber-glitch::after {
+  color: var(--fg);
+  text-shadow: 2px 0 var(--cyan);
+  animation: glitch-anim-2 3.1s infinite linear alternate-reverse;
+}
+
+/* ============================================================
+   Textures — scanlines + grid/circuit
+   ============================================================ */
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: var(--scanlines);
+  z-index: 1;
+}
+
+/* Full-viewport CRT overlay (rendered once in Base.astro) */
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  pointer-events: none;
+  background: var(--scanlines);
+  opacity: 0.55;
+}
+
+/* Animated scan beam sweeping down the viewport */
+.scanline-beam {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 120px;
+  z-index: 91;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 255, 136, 0.06),
+    transparent
+  );
+  animation: scanline 9s linear infinite;
+}
+
+/* Subtle tech grid */
+.bg-grid {
+  background-image: var(--grid-bg);
+  background-size: 50px 50px;
+}
+
+/* Circuit / grid + neon corner glows for page background */
+.circuit-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(600px 400px at 8% 0%, rgba(0, 255, 136, 0.06), transparent 70%),
+    radial-gradient(700px 500px at 100% 20%, rgba(255, 0, 255, 0.05), transparent 70%),
+    radial-gradient(600px 600px at 50% 110%, rgba(0, 212, 255, 0.05), transparent 70%),
+    linear-gradient(rgba(0, 255, 136, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 136, 0.03) 1px, transparent 1px);
+  background-size: auto, auto, auto, 50px 50px, 50px 50px;
+}
+
+/* Blinking terminal cursor */
+.blink,
+.cursor-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ============================================================
+   Keyframes
+   ============================================================ */
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); }
+  60% { transform: translate(-1px, -1px); }
+  80% { transform: translate(1px, 1px); }
+}
+
+@keyframes glitch-anim-1 {
+  0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, -1px); }
+  10% { clip-path: inset(60% 0 10% 0); transform: translate(2px, 1px); }
+  20% { clip-path: inset(10% 0 60% 0); transform: translate(-2px, 2px); }
+  30% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
+  40% { clip-path: inset(30% 0 50% 0); transform: translate(-1px, -1px); }
+  50% { clip-path: inset(55% 0 25% 0); transform: translate(1px, 1px); }
+  60% { clip-path: inset(5% 0 85% 0); transform: translate(-2px, 1px); }
+  70% { clip-path: inset(70% 0 15% 0); transform: translate(2px, -1px); }
+  80% { clip-path: inset(40% 0 40% 0); transform: translate(-1px, 2px); }
+  90% { clip-path: inset(15% 0 70% 0); transform: translate(1px, -2px); }
+  100% { clip-path: inset(50% 0 30% 0); transform: translate(0); }
+}
+
+@keyframes glitch-anim-2 {
+  0% { clip-path: inset(65% 0 20% 0); transform: translate(2px, 1px); }
+  10% { clip-path: inset(10% 0 75% 0); transform: translate(-2px, -1px); }
+  20% { clip-path: inset(45% 0 35% 0); transform: translate(2px, -2px); }
+  30% { clip-path: inset(5% 0 90% 0); transform: translate(-2px, 2px); }
+  40% { clip-path: inset(75% 0 5% 0); transform: translate(1px, 1px); }
+  50% { clip-path: inset(25% 0 60% 0); transform: translate(-1px, -1px); }
+  60% { clip-path: inset(85% 0 5% 0); transform: translate(2px, -1px); }
+  70% { clip-path: inset(35% 0 45% 0); transform: translate(-2px, 1px); }
+  80% { clip-path: inset(55% 0 30% 0); transform: translate(1px, -2px); }
+  90% { clip-path: inset(15% 0 65% 0); transform: translate(-1px, 2px); }
+  100% { clip-path: inset(40% 0 45% 0); transform: translate(0); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes rgbShift {
+  0%, 100% { text-shadow: -2px 0 var(--magenta), 2px 0 var(--cyan); }
+  50% { text-shadow: 2px 0 var(--magenta), -2px 0 var(--cyan); }
+}
+
+/* ============================================================
+   Focus — neon ring, always visible for keyboard users
+   ============================================================ */
+
+:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--bg),
+    0 0 0 4px var(--neon),
+    0 0 10px rgba(0, 255, 136, 0.6);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   Scrollbar — dark chrome, neon thumb on hover
+   ============================================================ */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) var(--bg);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 2px solid var(--bg);
+  border-radius: 0;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--neon);
+  box-shadow: var(--box-shadow-neon-sm);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--bg);
+}
+
+/* ============================================================
+   Reduced motion — keep static chromatic aberration, kill flicker
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .cyber-glitch {
+    animation: none;
+    text-shadow:
+      -1px 0 var(--magenta),
+      1px 0 var(--cyan);
+  }
+
+  .cyber-glitch::before,
+  .cyber-glitch::after {
+    animation: none;
+    display: none;
+  }
+
+  .scanline-beam {
+    display: none;
+  }
+
+  .blink,
+  .cursor-blink {
+    animation: none;
+    opacity: 1;
+  }
+}

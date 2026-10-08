@@ -1,0 +1,229 @@
+{
+  "thesmarter/muslim-pro": {
+    "featured": true,
+    "featured_order": 1,
+    "category": "islamic",
+    "description_en": "Flutter Muslim Pro app — Azkar, Quran, prayer times and Islamic tools.",
+    "domains": ["mobile", "flutter"]
+  },
+  "thesmarter/zatca": {
+    "featured": true,
+    "featured_order": 2,
+    "category": "payments-fintech",
+    "description_en": "ZATCA Phase 2 (Fatoora) e-invoicing PHP package — QR, XML, signing and clearance.",
+    "install": "composer require thesmarter/zatca",
+    "domains": ["php", "e-invoicing"]
+  },
+  "thesmarter/Tafqeet": {
+    "featured": true,
+    "featured_order": 3,
+    "category": "payments-fintech",
+    "description_en": "Convert numbers to Arabic words (Tafqeet) — ideal for invoices and cheques.",
+    "install": "composer require thesmarter/tafqeet",
+    "domains": ["php"]
+  },
+  "thesmarter/payments": {
+    "featured": true,
+    "featured_order": 4,
+    "category": "payments-fintech",
+    "description_en": "Unified PHP payment gateway helper — PayPal, Paymob, Fawry, Tap, HyperPay, PayTabs and MENA wallets.",
+    "install": "composer require thesmarter/payments",
+    "domains": ["php", "fintech"]
+  },
+  "DetaElectPro/MEAN": {
+    "featured": true,
+    "featured_order": 5,
+    "category": "web-mobile-starter",
+    "description_en": "MEAN stack starter — Angular + Express + MongoDB with Angular Material.",
+    "domains": ["web", "starter"]
+  },
+  "DetaElectPro/hawjahSystem": {
+    "featured": true,
+    "featured_order": 6,
+    "category": "medical",
+    "description_en": "Clinic help-center app connecting doctors and patients.",
+    "domains": ["web", "health"]
+  },
+  "DetaElectPro/deta.sd": {
+    "featured": true,
+    "featured_order": 7,
+    "category": "web-mobile-starter",
+    "description_en": "Deta company profile and landing site (TypeScript).",
+    "domains": ["web"]
+  },
+  "DetaElectPro/Odoo_install": {
+    "featured": true,
+    "featured_order": 8,
+    "category": "erp-commerce",
+    "description_en": "Odoo ERP install guides and scripts with Markdown docs.",
+    "domains": ["erp", "devops"]
+  },
+  "thesmarter/thesmarter.github.io": {
+    "category": "devops-infra",
+    "description_en": "Organization portfolio site — Astro static showcase of all projects.",
+    "domains": ["web"]
+  },
+  "thesmarter/laravel-api-to-postman": {
+    "category": "laravel-php",
+    "description_en": "Generate a Postman collection automatically from your Laravel API routes.",
+    "install": "composer require thesmarter/laravel-api-to-postman --dev",
+    "domains": ["php", "laravel"]
+  },
+  "thesmarter/laravel-geographical-calculator": {
+    "category": "laravel-php",
+    "description_en": "Laravel geo calculator — distances and coordinate math with multiple algorithms.",
+    "install": "composer require thesmarter/laravel-geographical-calculator",
+    "domains": ["php", "laravel", "geo"]
+  },
+  "thesmarter/Documentation": {
+    "category": "laravel-php",
+    "description_en": "Internal dev documentation and PHP guides.",
+    "domains": ["docs"]
+  },
+  "thesmarter/vps-audit": {
+    "category": "devops-infra",
+    "description_en": "Lightweight dependency-free bash auditor for Linux VPS security and performance.",
+    "domains": ["devops", "security"]
+  },
+  "thesmarter/doc-connect-folio": {
+    "category": "medical",
+    "description_en": "Doctor directory portfolio — connect patients with clinics (TypeScript).",
+    "domains": ["web", "health"]
+  },
+  "thesmarter/DevNexus": {
+    "category": "web-mobile-starter",
+    "description_en": "DevNexus developer hub and project starter.",
+    "domains": ["web"]
+  },
+  "AdaaSystem/laravel-auth-log": {
+    "category": "laravel-php",
+    "description_en": "Laravel authentication activity logger.",
+    "install": "composer require adaa-system/laravel-auth-log",
+    "domains": ["php", "laravel"]
+  },
+  "AdaaSystem/AdaaHelpSystem": {
+    "category": "medical",
+    "description_en": "Adaa help-desk and ticketing front-end (JavaScript).",
+    "domains": ["web"]
+  },
+  "AdaaSystem/Service-Provider": {
+    "category": "laravel-php",
+    "description_en": "Laravel service-provider boilerplate in PHP.",
+    "domains": ["php", "laravel"]
+  },
+  "AdaaSystem/laravel-vue-i18n-generator": {
+    "category": "laravel-php",
+    "description_en": "Generate Vue i18n files from Laravel translations.",
+    "domains": ["php", "laravel", "vue"]
+  },
+  "AdaaSystem/adaa-crm": {
+    "category": "erp-commerce",
+    "description_en": "Adaa CRM — customer relationship management (PHP port).",
+    "domains": ["erp", "crm"]
+  },
+  "AdaaSystem/roomGPT": {
+    "curated": false,
+    "category": "web-mobile-starter",
+    "description_en": "Room redesign with AI (upstream fork — hidden from showcase).",
+    "domains": ["web", "ai"]
+  },
+  "AdaaSystem/Server-Certbot-XAMPP-Ubuntu": {
+    "curated": false,
+    "category": "devops-infra",
+    "description_en": "Certbot SSL guide for XAMPP on Ubuntu (upstream fork — hidden).",
+    "domains": ["devops"]
+  },
+  "AdaaSystem/laravel-maps": {
+    "curated": false,
+    "category": "laravel-php",
+    "description_en": "Laravel maps library (upstream fork — hidden from showcase).",
+    "domains": ["php", "laravel", "geo"]
+  },
+  "DetaElectPro/HjosatiFront": {
+    "category": "web-mobile-starter",
+    "description_en": "Stadium and gym reservation app for Khartoum (TypeScript front-end).",
+    "domains": ["web"]
+  },
+  "DetaElectPro/ZoolFlat": {
+    "category": "web-mobile-starter",
+    "description_en": "Flat-rental listing starter (JavaScript).",
+    "domains": ["web"]
+  },
+  "DetaElectPro/detaelectpro.github.io": {
+    "category": "devops-infra",
+    "description_en": "Legacy DetaElectPro organization site.",
+    "domains": ["web"]
+  },
+  "DetaElectPro/woo-product-table": {
+    "category": "erp-commerce",
+    "description_en": "WooCommerce product-table plugin fork — pro table features for free.",
+    "domains": ["wordpress", "ecommerce"]
+  },
+  "DetaElectPro/accounting-js": {
+    "category": "payments-fintech",
+    "description_en": "JavaScript money and accounting formatting helpers.",
+    "domains": ["js", "fintech"]
+  },
+  "DetaElectPro/Dokkan-Angular": {
+    "category": "erp-commerce",
+    "description_en": "Dokkan POS AngularJS v1 helpers — controllers and models.",
+    "domains": ["web", "pos"]
+  },
+  "DetaElectPro/Plantation": {
+    "category": "web-mobile-starter",
+    "description_en": "Plantation agriculture tracker starter (Ruby).",
+    "domains": ["web"]
+  },
+  "DetaElectPro/Medical-Users-App": {
+    "category": "medical",
+    "description_en": "Patient-side medical booking app (Java/Android).",
+    "domains": ["mobile", "health"]
+  },
+  "DetaElectPro/Medical-Admin-App": {
+    "category": "medical",
+    "description_en": "Admin-side medical management app (Java/Android).",
+    "domains": ["mobile", "health"]
+  },
+  "DetaElectPro/openmrs-contrib-android-client": {
+    "curated": false,
+    "category": "medical",
+    "description_en": "OpenMRS Android client (upstream fork — hidden).",
+    "domains": ["mobile", "health"]
+  },
+  "DetaElectPro/openmrs-core": {
+    "curated": false,
+    "category": "medical",
+    "description_en": "OpenMRS core API and web app (upstream fork — hidden).",
+    "domains": ["health"]
+  },
+  "DetaElectPro/adaa-crm": {
+    "category": "erp-commerce",
+    "description_en": "Adaa CRM — Arabic customer relationship management system.",
+    "domains": ["erp", "crm"]
+  },
+  "DetaElectPro/vitel-user": {
+    "category": "medical",
+    "description_en": "Hospital doctor-finder app for patients (TypeScript).",
+    "domains": ["mobile", "health"]
+  },
+  "DetaElectPro/vital-provider": {
+    "category": "medical",
+    "description_en": "Provider-side companion to the Vitel hospital app (TypeScript).",
+    "domains": ["mobile", "health"]
+  },
+  "DetaElectPro/Medical2": {
+    "category": "medical",
+    "description_en": "Medical records prototype in PHP.",
+    "domains": ["health"]
+  },
+  "DetaElectPro/grandnode": {
+    "category": "erp-commerce",
+    "description_en": "GrandNode open-source e-commerce cart on ASP.NET Core (fork).",
+    "domains": ["ecommerce"]
+  },
+  "DetaElectPro/leantime": {
+    "category": "devops-infra",
+    "description_en": "Leantime goal-focused project management for non-PMs (fork).",
+    "domains": ["devops"]
+  }
+}

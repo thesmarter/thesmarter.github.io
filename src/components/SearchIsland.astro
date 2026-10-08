@@ -1,0 +1,506 @@
+---
+/**
+ * SearchIsland.astro — vanilla JS (no framework) live repo filter.
+ * props: { reposJsonUrl?: string }
+ *
+ * Data source priority:
+ *  1. <script type="application/json" data-search-index> provided via <slot name="index" />
+ *  2. <script type="application/json" data-search-index> rendered from `initialRepos` prop
+ *  3. fetch(reposJsonUrl ?? '/search-index.json')
+ *
+ * Matching: case-insensitive includes over name + fullName + description_en + topics.
+ */
+interface SearchRepo {
+  name: string;
+  fullName?: string;
+  full_name?: string;
+  description?: string | null;
+  description_en?: string | null;
+  htmlUrl?: string;
+  html_url?: string;
+  url?: string;
+  homepage?: string | null;
+  demoUrl?: string | null;
+  language?: string | null;
+  stars?: number;
+  stargazersCount?: number;
+  stargazers_count?: number;
+  forks?: number;
+  forksCount?: number;
+  forks_count?: number;
+  license?: string | { spdx_id?: string; spdxId?: string; name?: string } | null;
+  fork?: boolean;
+  isFork?: boolean;
+  topics?: string[];
+  featured?: boolean;
+  isFeatured?: boolean;
+  org?: string;
+  owner?: string | { login?: string } | null;
+  category?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
+
+interface Props {
+  reposJsonUrl?: string;
+  initialRepos?: SearchRepo[];
+}
+
+const { reposJsonUrl = '/search-index.json', initialRepos = [] } = Astro.props as Props;
+const initialJson = JSON.stringify(initialRepos ?? []);
+---
+
+<div
+  data-search-island
+  data-json-url={reposJsonUrl}
+  class="font-mono"
+>
+  <form
+    data-filters
+    role="search"
+    aria-label="Filter repositories"
+    class="mb-8 flex flex-col gap-4 border border-[#2a2a3a] bg-[#12121a] p-4 sm:p-6"
+    style="clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));"
+  >
+    <!-- CyberInput -->
+    <div>
+      <label for="sq-input" class="mb-2 block text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">
+        SEARCH_QUERY
+      </label>
+      <div class="relative">
+        <span aria-hidden="true" class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#00ff88]">&gt;</span>
+        <input
+          data-q
+          id="sq-input"
+          name="q"
+          type="search"
+          autocomplete="off"
+          spellcheck={false}
+          placeholder="type to filter… e.g. astro, cli, php"
+          class="min-h-[44px] w-full border border-[#2a2a3a] bg-[#0a0a0f] py-3 pl-9 pr-10 text-sm uppercase tracking-[0.15em] text-[#00ff88] placeholder:text-[#6b7280] placeholder:opacity-70 focus:border-[#00ff88] focus:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840] focus:outline-none"
+        />
+        <button
+          type="button"
+          data-clear-q
+          aria-label="Clear search query"
+          class="absolute right-1 top-1/2 hidden min-h-[44px] min-w-[44px] -translate-y-1/2 items-center justify-center text-[#6b7280] hover:text-[#ff00ff] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88]"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- org segmented -->
+    <fieldset>
+      <legend class="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">ORG</legend>
+      <div data-orgs role="radiogroup" aria-label="Filter by organisation" class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          data-org="__all"
+          role="radio"
+          aria-checked="true"
+          class="min-h-[44px] border border-[#00ff88] bg-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#0a0a0f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+        >
+          ALL
+        </button>
+      </div>
+    </fieldset>
+
+    <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
+      <!-- language select -->
+      <div>
+        <label for="sq-lang" class="mb-2 block text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">LANGUAGE</label>
+        <select
+          data-lang
+          id="sq-lang"
+          name="lang"
+          class="min-h-[44px] w-full border border-[#2a2a3a] bg-[#0a0a0f] px-3 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0] focus:border-[#00ff88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88]"
+        >
+          <option value="__all">ALL_LANGS</option>
+        </select>
+      </div>
+      <!-- sort select -->
+      <div>
+        <label for="sq-sort" class="mb-2 block text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">SORT</label>
+        <select
+          data-sort
+          id="sq-sort"
+          name="sort"
+          class="min-h-[44px] w-full border border-[#2a2a3a] bg-[#0a0a0f] px-3 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0] focus:border-[#00ff88] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88]"
+        >
+          <option value="stars">STARS ↓</option>
+          <option value="forks">FORKS ↓</option>
+          <option value="name">NAME A–Z</option>
+          <option value="updated">UPDATED ↓</option>
+        </select>
+      </div>
+      <!-- toggles -->
+      <fieldset>
+        <legend class="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">FLAGS</legend>
+        <div class="flex gap-2">
+          <label class="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 border border-[#2a2a3a] px-3 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] has-checked:border-[#00ff88] has-checked:text-[#00ff88] focus-within:ring-2 focus-within:ring-[#00ff88]">
+            <input type="checkbox" data-featured class="h-4 w-4 accent-[#00ff88]" />
+            ★ FEAT
+          </label>
+          <label class="inline-flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-2 border border-[#2a2a3a] px-3 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] has-checked:border-[#ff00ff] has-checked:text-[#ff00ff] focus-within:ring-2 focus-within:ring-[#ff00ff]">
+            <input type="checkbox" data-hide-forks class="h-4 w-4 accent-[#ff00ff]" />
+            HIDE⑂
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- category chips -->
+    <fieldset>
+      <legend class="mb-2 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">CATEGORY</legend>
+      <div data-cats class="flex flex-wrap gap-2" aria-label="Filter by category">
+        <button
+          type="button"
+          data-cat="__all"
+          aria-pressed="true"
+          class="min-h-[44px] border border-[#00d4ff] bg-[#00d4ff] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#0a0a0f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+        >
+          ALL
+        </button>
+      </div>
+    </fieldset>
+
+    <div class="flex items-center justify-between gap-3 pt-1">
+      <p data-count role="status" aria-live="polite" class="text-[12px] uppercase tracking-[0.2em] text-[#00ff88]">
+        …LOADING_INDEX
+      </p>
+      <button
+        type="button"
+        data-reset
+        class="inline-flex min-h-[44px] items-center border border-[#2a2a3a] px-4 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] hover:border-[#ff3366] hover:text-[#ff3366] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff3366]"
+      >
+        RESET[x]
+      </button>
+    </div>
+  </form>
+
+  <!-- embedded initial index -->
+  <script type="application/json" data-search-index set:html={initialJson} />
+  <slot name="index" />
+
+  <div data-grid class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3" aria-label="Filtered repositories"></div>
+
+  <div data-empty hidden class="border border-[#ff00ff]/40 bg-[#0a0a0f] p-8 text-sm leading-relaxed">
+    <p class="text-[#ff00ff]">$ NO_RESULTS_FOUND<span aria-hidden="true" class="animate-pulse">_</span></p>
+    <p class="mt-2 uppercase tracking-[0.2em] text-[#6b7280]">&gt; TRY_ADJUSTING_FILTERS OR CLEARING_QUERY</p>
+    <button
+      type="button"
+      data-empty-reset
+      class="mt-4 inline-flex min-h-[44px] items-center border-2 border-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] hover:bg-[#00ff88] hover:text-[#0a0a0f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88]"
+    >
+      CLEAR_ALL_FILTERS
+    </button>
+  </div>
+</div>
+
+<script>
+  (() => {
+    const LANG_COLORS = {
+      PHP: '#777bb4', Dart: '#00d4ff', TypeScript: '#3178c6', TS: '#3178c6',
+      JavaScript: '#f1e05a', JS: '#f1e05a', Shell: '#00ff88', HTML: '#ff00ff',
+      Java: '#b07219', Ruby: '#701516', CSS: '#563d7c',
+    };
+    const LS_KEY = 'smarter-search-v1';
+    const DEBOUNCE_MS = 150;
+
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      })[c]);
+    }
+
+    function get(r, ...keys) {
+      for (const k of keys) {
+        const v = r?.[k];
+        if (v !== undefined && v !== null && v !== '') return v;
+      }
+      return undefined;
+    }
+
+    function norm(r) {
+      const name = r.name ?? '';
+      const fullName = get(r, 'fullName', 'full_name') ?? (r.org ? `${r.org}/${name}` : name);
+      const org = get(r, 'org') ?? (typeof r.owner === 'string' ? r.owner : r.owner?.login) ?? (String(fullName).includes('/') ? String(fullName).split('/')[0] : '');
+      const desc = get(r, 'description_en', 'description') ?? '';
+      const topics = Array.isArray(r.topics) ? r.topics : [];
+      const htmlUrl = get(r, 'htmlUrl', 'html_url', 'url') ?? `https://github.com/${fullName}`;
+      const demoUrl = get(r, 'demoUrl', 'demo_url', 'homepage') ?? null;
+      const language = r.language ?? null;
+      const stars = get(r, 'stars', 'stargazersCount', 'stargazers_count') ?? 0;
+      const forks = get(r, 'forks', 'forksCount', 'forks_count') ?? 0;
+      const isFork = get(r, 'fork', 'isFork') ?? false;
+      const featured = get(r, 'featured', 'isFeatured') ?? false;
+      const category = r.category ?? null;
+      const updated = get(r, 'updatedAt', 'updated_at') ?? '';
+      return { _raw: r, name, fullName, org, desc, topics, htmlUrl, demoUrl, language, stars: Number(stars) || 0, forks: Number(forks) || 0, isFork: !!isFork, featured: !!featured, category, updated };
+    }
+
+    function highlight(text, tokens) {
+      let out = esc(text);
+      for (const t of tokens) {
+        if (!t) continue;
+        const safe = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        try {
+          out = out.replace(new RegExp(`(${safe})`, 'gi'), '<mark class="bg-[#00ff88] text-[#0a0a0f]">$1</mark>');
+        } catch { /* noop */ }
+      }
+      return out;
+    }
+
+    function cardHTML(n, tokens) {
+      const langColor = (n.language && LANG_COLORS[n.language]) || '#6b7280';
+      const topics = n.topics.slice(0, 3).map((t) => `<li class="border border-[#2a2a3a] bg-[#0a0a0f] px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">[#${esc(t)}]</li>`).join('');
+      const codeLabel = `VIEW_CODE_${esc(n.name)}_ON_GITHUB`;
+      return `
+      <article aria-label="${esc(n.fullName)} repository" class="relative flex min-h-full flex-col border border-[#2a2a3a] bg-[#12121a] font-mono transition-all duration-300 hover:-translate-y-1 hover:border-[#00ff88] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840]" style="clip-path: polygon(0 10px, 10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px));">
+        ${n.featured ? `<div class="absolute -right-px -top-px z-10 bg-[#00ff88] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#0a0a0f]">★ Featured</div>` : ''}
+        <div class="flex flex-1 flex-col gap-3 p-5">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">${esc(n.org) || 'REPO'}</p>
+              <h3 class="mt-1 truncate text-lg font-bold uppercase tracking-wide text-[#e0e0e0]">${highlight(n.name, tokens)}</h3>
+            </div>
+            ${n.language ? `<span class="inline-flex min-h-[44px] shrink-0 items-center gap-2 text-[12px] uppercase tracking-[0.2em] text-[#6b7280]"><span class="inline-block h-3 w-3 rounded-full" style="background-color:${langColor};box-shadow:0 0 6px ${langColor}66;"></span>${esc(n.language)}</span>` : ''}
+          </div>
+          ${n.desc ? `<p class="line-clamp-2 text-sm leading-relaxed tracking-wide text-[#6b7280]">${highlight(n.desc, tokens)}</p>` : ''}
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0]">
+            <span class="inline-flex min-h-[44px] items-center gap-1.5">★ ${n.stars}</span>
+            <span class="inline-flex min-h-[44px] items-center gap-1.5">⑂ ${n.forks}</span>
+            ${n.isFork ? `<span class="inline-flex min-h-[30px] items-center border border-[#ff00ff]/50 bg-[#ff00ff]/10 px-2 py-1 text-[11px] text-[#ff00ff]">⑂ FORK</span>` : ''}
+          </div>
+          ${topics ? `<ul class="flex flex-wrap gap-2" aria-label="Topics">${topics}</ul>` : ''}
+          <div class="mt-auto flex gap-3 pt-2">
+            <a href="${esc(n.htmlUrl)}" target="_blank" rel="noopener noreferrer" aria-label="${codeLabel}" class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border-2 border-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] hover:bg-[#00ff88] hover:text-[#0a0a0f]">CODE ↗</a>
+            ${n.demoUrl ? `<a href="${esc(n.demoUrl)}" target="_blank" rel="noopener noreferrer" aria-label="VIEW_LIVE_DEMO_OF_${esc(n.name)}" class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border border-[#2a2a3a] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#e0e0e0] hover:border-[#ff00ff] hover:text-[#ff00ff]">DEMO ↗</a>` : `<span aria-disabled="true" class="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center border border-[#2a2a3a] px-4 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] opacity-50">NO_DEMO</span>`}
+          </div>
+        </div>
+      </article>`;
+    }
+
+    function readStateFromURL() {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        return {
+          q: p.get('q') ?? undefined,
+          org: p.get('org') ?? undefined,
+          lang: p.get('lang') ?? undefined,
+          cat: p.get('cat') ?? undefined,
+          sort: p.get('sort') ?? undefined,
+          featured: p.get('featured') === '1' ? true : undefined,
+          hideForks: p.get('hideForks') === '1' ? true : undefined,
+        };
+      } catch { return {}; }
+    }
+
+    function readStateFromLS() {
+      try {
+        const raw = window.localStorage.getItem(LS_KEY);
+        return raw ? JSON.parse(raw) : {};
+      } catch { return {}; }
+    }
+
+    async function init(root) {
+      const qInput = root.querySelector('[data-q]');
+      const clearQ = root.querySelector('[data-clear-q]');
+      const orgWrap = root.querySelector('[data-orgs]');
+      const langSel = root.querySelector('[data-lang]');
+      const catWrap = root.querySelector('[data-cats]');
+      const sortSel = root.querySelector('[data-sort]');
+      const featChk = root.querySelector('[data-featured]');
+      const hideChk = root.querySelector('[data-hide-forks]');
+      const countEl = root.querySelector('[data-count]');
+      const grid = root.querySelector('[data-grid]');
+      const empty = root.querySelector('[data-empty]');
+      const resetBtn = root.querySelector('[data-reset]');
+      const emptyReset = root.querySelector('[data-empty-reset]');
+      const form = root.querySelector('[data-filters]');
+      form?.addEventListener('submit', (e) => e.preventDefault());
+
+      // ---- load data ----
+      let repos = [];
+      const inlineScripts = root.querySelectorAll('script[data-search-index]');
+      for (const s of inlineScripts) {
+        try {
+          const txt = (s.textContent || '').trim();
+          if (!txt || txt === '[]') continue;
+          const parsed = JSON.parse(txt);
+          if (Array.isArray(parsed) && parsed.length > 0) { repos = parsed; break; }
+          if (parsed && Array.isArray(parsed.repos)) { repos = parsed.repos; break; }
+        } catch { /* try next */ }
+      }
+      if (repos.length === 0) {
+        const url = root.getAttribute('data-json-url') || '/search-index.json';
+        try {
+          const res = await fetch(url, { headers: { accept: 'application/json' } });
+          if (res.ok) {
+            const j = await res.json();
+            repos = Array.isArray(j) ? j : (j.repos ?? []);
+          }
+        } catch { repos = []; }
+      }
+      const data = repos.map(norm);
+
+      // ---- facets ----
+      const orgs = [...new Set(data.map((d) => d.org).filter(Boolean))].sort();
+      const langs = [...new Set(data.map((d) => d.language).filter(Boolean))].sort();
+      const cats = [...new Set(data.map((d) => d.category).filter(Boolean))].sort();
+
+      const btnBase = 'min-h-[44px] border px-4 text-[12px] uppercase tracking-[0.2em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]';
+      const btnOn = 'border-[#00ff88] bg-[#00ff88] font-bold text-[#0a0a0f]';
+      const btnOff = 'border-[#2a2a3a] text-[#6b7280] hover:border-[#00ff88] hover:text-[#00ff88]';
+
+      function renderOrgFacet(active) {
+        orgWrap.innerHTML = '';
+        const mk = (val, label) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.setAttribute('data-org', val);
+          b.setAttribute('role', 'radio');
+          const isActive = active === val;
+          b.setAttribute('aria-checked', String(isActive));
+          b.className = `${btnBase} ${isActive ? btnOn : btnOff}`;
+          b.textContent = label;
+          b.addEventListener('click', () => { state.org = val; syncAndRender(); });
+          return b;
+        };
+        orgWrap.appendChild(mk('__all', 'ALL'));
+        for (const o of orgs) orgWrap.appendChild(mk(o, o.toUpperCase()));
+      }
+
+      function renderCatFacet(active) {
+        catWrap.innerHTML = '';
+        const mk = (val, label) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.setAttribute('data-cat', val);
+          const isActive = active === val;
+          b.setAttribute('aria-pressed', String(isActive));
+          b.className = `${btnBase} ${isActive ? 'border-[#00d4ff] bg-[#00d4ff] font-bold text-[#0a0a0f]' : 'border-[#2a2a3a] text-[#6b7280] hover:border-[#00d4ff] hover:text-[#00d4ff]'}`;
+          b.textContent = label;
+          b.addEventListener('click', () => { state.cat = val; syncAndRender(); });
+          return b;
+        };
+        catWrap.appendChild(mk('__all', 'ALL'));
+        for (const c of cats) catWrap.appendChild(mk(c, `[${String(c).toUpperCase()}]`));
+      }
+
+      langSel.innerHTML = '<option value="__all">ALL_LANGS</option>' + langs.map((l) => `<option value="${esc(l)}">${esc(String(l).toUpperCase())}</option>`).join('');
+
+      // ---- state ----
+      const fromURL = readStateFromURL();
+      const fromLS = readStateFromLS();
+      const state = {
+        q: fromURL.q ?? fromLS.q ?? '',
+        org: fromURL.org ?? fromLS.org ?? '__all',
+        lang: fromURL.lang ?? fromLS.lang ?? '__all',
+        cat: fromURL.cat ?? fromLS.cat ?? '__all',
+        sort: fromURL.sort ?? fromLS.sort ?? 'stars',
+        featured: fromURL.featured ?? fromLS.featured ?? false,
+        hideForks: fromURL.hideForks ?? fromLS.hideForks ?? false,
+      };
+
+      let debounceT;
+      qInput.addEventListener('input', () => {
+        if (clearQ) {
+          const show = qInput.value.length > 0;
+          clearQ.classList.toggle('hidden', !show);
+          clearQ.classList.toggle('inline-flex', show);
+        }
+        clearTimeout(debounceT);
+        debounceT = setTimeout(() => { state.q = qInput.value; syncAndRender(); }, DEBOUNCE_MS);
+      });
+      clearQ?.addEventListener('click', () => { qInput.value = ''; state.q = ''; syncAndRender(); qInput.focus(); });
+      langSel.addEventListener('change', () => { state.lang = langSel.value; syncAndRender(); });
+      sortSel.addEventListener('change', () => { state.sort = sortSel.value; syncAndRender(); });
+      featChk.addEventListener('change', () => { state.featured = featChk.checked; syncAndRender(); });
+      hideChk.addEventListener('change', () => { state.hideForks = hideChk.checked; syncAndRender(); });
+
+      function resetAll() {
+        state.q = ''; state.org = '__all'; state.lang = '__all'; state.cat = '__all';
+        state.sort = 'stars'; state.featured = false; state.hideForks = false;
+        syncAndRender();
+      }
+      resetBtn?.addEventListener('click', resetAll);
+      emptyReset?.addEventListener('click', resetAll);
+
+      function applyStateToControls() {
+        if (qInput.value !== state.q) qInput.value = state.q;
+        langSel.value = state.lang;
+        sortSel.value = state.sort;
+        featChk.checked = !!state.featured;
+        hideChk.checked = !!state.hideForks;
+        renderOrgFacet(state.org);
+        renderCatFacet(state.cat);
+      }
+
+      function persist() {
+        try { window.localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch { /* noop */ }
+        try {
+          const p = new URLSearchParams();
+          if (state.q) p.set('q', state.q);
+          if (state.org && state.org !== '__all') p.set('org', state.org);
+          if (state.lang && state.lang !== '__all') p.set('lang', state.lang);
+          if (state.cat && state.cat !== '__all') p.set('cat', state.cat);
+          if (state.sort && state.sort !== 'stars') p.set('sort', state.sort);
+          if (state.featured) p.set('featured', '1');
+          if (state.hideForks) p.set('hideForks', '1');
+          const qs = p.toString();
+          window.history.replaceState(null, '', qs ? `?${qs}` : window.location.pathname);
+        } catch { /* noop */ }
+      }
+
+      function filtered() {
+        const tokens = String(state.q || '').toLowerCase().split(/\s+/).filter(Boolean);
+        let out = data.filter((d) => {
+          if (state.org !== '__all' && d.org !== state.org) return false;
+          if (state.lang !== '__all' && d.language !== state.lang) return false;
+          if (state.cat !== '__all' && d.category !== state.cat) return false;
+          if (state.featured && !d.featured) return false;
+          if (state.hideForks && d.isFork) return false;
+          if (tokens.length > 0) {
+            const hay = `${d.name} ${d.fullName} ${d.desc} ${d.topics.join(' ')}`.toLowerCase();
+            for (const t of tokens) if (!hay.includes(t)) return false;
+          }
+          return true;
+        });
+        if (state.sort === 'name') out.sort((a, b) => a.name.localeCompare(b.name));
+        else if (state.sort === 'forks') out.sort((a, b) => b.forks - a.forks);
+        else if (state.sort === 'updated') out.sort((a, b) => String(b.updated).localeCompare(String(a.updated)));
+        else out.sort((a, b) => b.stars - a.stars || (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+        return { out, tokens };
+      }
+
+      function syncAndRender() {
+        applyStateToControls();
+        persist();
+        const { out, tokens } = filtered();
+        grid.innerHTML = out.map((n) => cardHTML(n, tokens)).join('');
+        const total = data.length;
+        countEl.textContent = `${out.length}/${total} RESULTS${state.q ? ` // "${String(state.q).toUpperCase().slice(0, 40)}"` : ' // ALL'}`;
+        empty.hidden = out.length !== 0;
+        grid.style.display = out.length === 0 ? 'none' : '';
+      }
+
+      syncAndRender();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('[data-search-island]').forEach(init));
+    } else {
+      document.querySelectorAll('[data-search-island]').forEach(init);
+    }
+  })();
+</script>
+
+<style>
+  mark { border-radius: 0; }
+  select option { background: #0a0a0f; }
+  @media (prefers-reduced-motion: reduce) {
+    [data-search-island] * { transition: none !important; animation: none !important; }
+  }
+</style>

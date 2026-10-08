@@ -1,0 +1,278 @@
+---
+/**
+ * RepoCard.astro — chamfered cyberpunk repo card.
+ * Mirrors `Repo` shape from src/lib/repos.ts (kept local so this
+ * component works even before that module exists).
+ *
+ * props: { repo, variant?: 'default'|'terminal'|'holographic', hoverEffect?: boolean }
+ */
+interface RepoTopic {}
+export interface RepoCardRepo {
+  name: string;
+  fullName?: string;
+  full_name?: string;
+  description?: string | null;
+  description_en?: string | null;
+  htmlUrl?: string;
+  html_url?: string;
+  url?: string;
+  homepage?: string | null;
+  homepageUrl?: string | null;
+  demoUrl?: string | null;
+  demo_url?: string | null;
+  language?: string | null;
+  stars?: number;
+  stargazersCount?: number;
+  stargazers_count?: number;
+  forks?: number;
+  forksCount?: number;
+  forks_count?: number;
+  license?: string | { spdx_id?: string; spdxId?: string; name?: string } | null;
+  licenseSpdx?: string | null;
+  fork?: boolean;
+  isFork?: boolean;
+  parent?: string | { fullName?: string; full_name?: string; htmlUrl?: string; html_url?: string } | null;
+  upstream?: string | { fullName?: string; htmlUrl?: string } | null;
+  topics?: string[];
+  featured?: boolean;
+  isFeatured?: boolean;
+  org?: string;
+  owner?: string | { login?: string } | null;
+  category?: string;
+  updatedAt?: string;
+  updated_at?: string;
+}
+
+interface Props {
+  repo: RepoCardRepo;
+  variant?: 'default' | 'terminal' | 'holographic';
+  hoverEffect?: boolean;
+}
+
+const { repo, variant = 'default', hoverEffect = true } = Astro.props as Props;
+
+// ---- normalizers (accept camelCase + snake_case) ----
+const fullName: string =
+  repo.fullName ?? repo.full_name ?? (repo.org ? `${repo.org}/${repo.name}` : repo.name);
+const org: string =
+  repo.org ??
+  (typeof repo.owner === 'string' ? repo.owner : repo.owner?.login ?? '') ??
+  (fullName.includes('/') ? fullName.split('/')[0] : '');
+const description: string = repo.description_en ?? repo.description ?? '';
+const htmlUrl: string = repo.htmlUrl ?? repo.html_url ?? repo.url ?? `https://github.com/${fullName}`;
+const demoUrl: string | null = repo.demoUrl ?? repo.demo_url ?? repo.homepage ?? repo.homepageUrl ?? null;
+const language: string | null = repo.language ?? null;
+const stars: number = repo.stars ?? repo.stargazersCount ?? repo.stargazers_count ?? 0;
+const forksCount: number = repo.forks ?? repo.forksCount ?? repo.forks_count ?? 0;
+const isFork: boolean = repo.fork ?? repo.isFork ?? false;
+const featured: boolean = repo.featured ?? repo.isFeatured ?? false;
+const topics: string[] = Array.isArray(repo.topics) ? repo.topics.slice(0, 3) : [];
+const category: string | null = repo.category ?? null;
+
+let licenseLabel: string | null = null;
+if (typeof repo.license === 'string') licenseLabel = repo.license;
+else if (repo.license && typeof repo.license === 'object')
+  licenseLabel = repo.license.spdx_id ?? repo.license.spdxId ?? repo.license.name ?? null;
+if (!licenseLabel && repo.licenseSpdx) licenseLabel = repo.licenseSpdx;
+
+let upstreamName: string | null = null;
+let upstreamUrl: string | null = null;
+const rawUpstream = repo.parent ?? repo.upstream ?? null;
+if (typeof rawUpstream === 'string' && rawUpstream.length > 0) {
+  upstreamName = rawUpstream;
+  upstreamUrl = `https://github.com/${rawUpstream}`;
+} else if (rawUpstream && typeof rawUpstream === 'object') {
+  upstreamName = rawUpstream.fullName ?? rawUpstream.full_name ?? null;
+  upstreamUrl = rawUpstream.htmlUrl ?? rawUpstream.html_url ?? (upstreamName ? `https://github.com/${upstreamName}` : null);
+}
+
+const LANG_COLORS: Record<string, string> = {
+  PHP: '#777bb4',
+  Dart: '#00d4ff',
+  TypeScript: '#3178c6',
+  TS: '#3178c6',
+  JavaScript: '#f1e05a',
+  JS: '#f1e05a',
+  Shell: '#00ff88',
+  HTML: '#ff00ff',
+  Java: '#b07219',
+  Ruby: '#701516',
+  CSS: '#563d7c',
+};
+const langColor = (language && (LANG_COLORS[language] ?? null)) || '#6b7280';
+
+const variantClass =
+  variant === 'terminal'
+    ? 'bg-[#0a0a0f] border-[#2a2a3a]'
+    : variant === 'holographic'
+      ? 'bg-[#1c1c2e]/30 border-[#00ff88]/30 backdrop-blur-md shadow-[0_0_5px_#00ff88,0_0_20px_#00ff8860]'
+      : 'bg-[#12121a] border-[#2a2a3a]';
+
+const hoverClass = hoverEffect
+  ? 'transition-all duration-300 hover:-translate-y-1 hover:border-[#00ff88] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840]'
+  : '';
+
+const cardLabel = `${fullName} repository${language ? `, language ${language}` : ''}, ${stars} stars, ${forksCount} forks`;
+const codeLabel = `VIEW_CODE_${repo.name.toUpperCase().replace(/[^A-Z0-9]+/gi, '_')}_ON_GITHUB`;
+const demoLabel = demoUrl ? `VIEW_LIVE_DEMO_OF_${repo.name.toUpperCase().replace(/[^A-Z0-9]+/gi, '_')}` : '';
+---
+
+<article
+  aria-label={cardLabel}
+  class={`repo-card relative flex min-h-full flex-col border font-mono ${variantClass} ${hoverClass}`}
+>
+  {variant === 'terminal' && (
+    <div class="flex items-center gap-2 border-b border-[#2a2a3a] px-4 py-2.5" aria-hidden="true">
+      <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ff5f56]"></span>
+      <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#ffbd2e]"></span>
+      <span class="inline-block h-2.5 w-2.5 rounded-full bg-[#27c93f]"></span>
+      <span class="ml-2 truncate text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">{fullName}</span>
+    </div>
+  )}
+
+  {variant === 'holographic' && (
+    <div aria-hidden="true">
+      <span class="absolute left-0 top-0 h-3 w-3 border-l-2 border-t-2 border-[#00ff88]"></span>
+      <span class="absolute right-0 top-0 h-3 w-3 border-r-2 border-t-2 border-[#00ff88]"></span>
+      <span class="absolute bottom-0 left-0 h-3 w-3 border-b-2 border-l-2 border-[#00ff88]"></span>
+      <span class="absolute bottom-0 right-0 h-3 w-3 border-b-2 border-r-2 border-[#00ff88]"></span>
+    </div>
+  )}
+
+  {featured && (
+    <div
+      class="absolute -right-px -top-px z-10 bg-[#00ff88] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.2em] text-[#0a0a0f]"
+      style="clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);"
+    >
+      ★ Featured
+    </div>
+  )}
+
+  <div class="flex flex-1 flex-col gap-3 p-5">
+    <div class="flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <p class="text-[11px] uppercase tracking-[0.2em] text-[#6b7280]">{org || ' thesmarter '.trim() || 'REPO'}</p>
+        <h3 class="mt-1 truncate text-lg font-bold uppercase tracking-wide text-[#e0e0e0]">
+          <a
+            href={htmlUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="min-h-[44px] items-center underline-offset-4 hover:text-[#00ff88] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+            aria-label={codeLabel}
+          >
+            {repo.name}
+          </a>
+        </h3>
+      </div>
+      {language && (
+        <span class="inline-flex min-h-[44px] shrink-0 items-center gap-2 text-[12px] uppercase tracking-[0.2em] text-[#6b7280]">
+          <span
+            class="inline-block h-3 w-3 rounded-full border border-black/40"
+            style={`background-color: ${langColor}; box-shadow: 0 0 6px ${langColor}66;`}
+            aria-hidden="true"
+          ></span>
+          {language}
+        </span>
+      )}
+    </div>
+
+    {description && <p class="line-clamp-2 text-sm normal-case leading-relaxed tracking-wide text-[#6b7280]">{description}</p>}
+
+    <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] uppercase tracking-[0.2em] text-[#e0e0e0]">
+      <span class="inline-flex min-h-[44px] items-center gap-1.5" aria-label={`${stars} stars`}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#00ff88" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        {stars}
+      </span>
+      <span class="inline-flex min-h-[44px] items-center gap-1.5" aria-label={`${forksCount} forks`}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="18" cy="6" r="3"/><path d="M18 9v1a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9"/><path d="M12 12v3"/></svg>
+        {forksCount}
+      </span>
+      {licenseLabel && (
+        <span class="inline-flex min-h-[30px] items-center border border-[#2a2a3a] bg-[#1c1c2e] px-2 py-1 text-[11px] text-[#00d4ff]">
+          {licenseLabel}
+        </span>
+      )}
+      {isFork && (
+        <span class="inline-flex min-h-[30px] items-center border border-[#ff00ff]/50 bg-[#ff00ff]/10 px-2 py-1 text-[11px] text-[#ff00ff]">
+          ⑂ FORK{upstreamName ? ` ← ${upstreamName}` : ''}
+        </span>
+      )}
+      {category && (
+        <span class="inline-flex min-h-[30px] items-center border border-[#00ff88]/40 px-2 py-1 text-[11px] text-[#00ff88]">
+          [{category}]
+        </span>
+      )}
+    </div>
+
+    {isFork && upstreamUrl && upstreamName && (
+      <p class="text-[12px] uppercase tracking-[0.2em] text-[#6b7280]">
+        UPSTREAM:{' '}
+        <a
+          href={upstreamUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          class="min-h-[44px] py-2 text-[#00d4ff] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00d4ff]"
+          aria-label={`View upstream repository ${upstreamName}`}
+        >
+          {upstreamName}↗
+        </a>
+      </p>
+    )}
+
+    {topics.length > 0 && (
+      <ul class="flex flex-wrap gap-2" aria-label="Topics">
+        {topics.map((t) => (
+          <li class="border border-[#2a2a3a] bg-[#0a0a0f] px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-[#6b7280] hover:border-[#00ff88] hover:text-[#00ff88]">
+            #{t}
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <div class="mt-auto flex gap-3 pt-2">
+      <a
+        href={htmlUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label={codeLabel}
+        class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border-2 border-[#00ff88] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#00ff88] transition-all duration-150 hover:bg-[#00ff88] hover:text-[#0a0a0f] hover:shadow-[0_0_5px_#00ff88,0_0_10px_#00ff8840] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00ff88] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+      >
+        CODE
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+      </a>
+      {demoUrl ? (
+        <a
+          href={demoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={demoLabel}
+          class="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 border border-[#2a2a3a] px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#e0e0e0] transition-all duration-150 hover:border-[#ff00ff] hover:text-[#ff00ff] hover:shadow-[0_0_5px_#ff00ff,0_0_20px_#ff00ff60] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff00ff] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0f]"
+        >
+          DEMO
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>
+        </a>
+      ) : (
+        <span
+          aria-disabled="true"
+          class="inline-flex min-h-[44px] flex-1 cursor-not-allowed items-center justify-center gap-2 border border-[#2a2a3a] px-4 text-[12px] uppercase tracking-[0.2em] text-[#6b7280] opacity-50"
+        >
+          NO_DEMO
+        </span>
+      )}
+    </div>
+  </div>
+</article>
+
+<style>
+  .repo-card {
+    clip-path: polygon(
+      0 10px, 10px 0,
+      calc(100% - 10px) 0, 100% 10px,
+      100% calc(100% - 10px), calc(100% - 10px) 100%,
+      10px 100%, 0 calc(100% - 10px)
+    );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .repo-card { transition: none; }
+  }
+</style>

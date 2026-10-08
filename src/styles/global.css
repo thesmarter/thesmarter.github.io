@@ -1,0 +1,188 @@
+@import "./tokens.css";
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0a0a0f;
+  --color-card: #12121a;
+  --color-muted: #1c1c2e;
+  --color-fg: #e0e0e0;
+  --color-muted-fg: #6b7280;
+  --color-neon: #00ff88;
+  --color-magenta: #ff00ff;
+  --color-cyan: #00d4ff;
+  --color-border: #2a2a3a;
+  --color-danger: #ff3366;
+
+  --font-display: "Orbitron", "Share Tech Mono", ui-monospace, monospace;
+  --font-body: "JetBrains Mono", "Fira Code", "Consolas", ui-monospace, monospace;
+  --font-accent: "Share Tech Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-body);
+    font-size: 1rem;
+    line-height: 1.75;
+    letter-spacing: 0.025em;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: var(--neon);
+    color: var(--bg);
+    text-shadow: none;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+    line-height: 1.1;
+    color: var(--fg);
+  }
+
+  h1 {
+    font-weight: 900;
+    letter-spacing: 0.12em;
+  }
+
+  h2 {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+  }
+
+  h3, h4 {
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+
+  a {
+    color: var(--cyan);
+    text-decoration: underline;
+    text-decoration-color: rgba(0, 212, 255, 0.4);
+    text-underline-offset: 3px;
+    transition: var(--transition-digital);
+  }
+
+  a:hover {
+    color: var(--neon);
+    text-decoration-color: var(--neon);
+    text-shadow: 0 0 8px rgba(0, 255, 136, 0.6);
+  }
+
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-body);
+  }
+
+  pre {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    line-height: 1.6;
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+@layer utilities {
+  /* --- Neon text glow --- */
+  .glow {
+    text-shadow:
+      0 0 5px rgba(0, 255, 136, 0.8),
+      0 0 15px rgba(0, 255, 136, 0.4);
+  }
+
+  .glow-sm {
+    text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+  }
+
+  .glow-magenta {
+    text-shadow:
+      0 0 5px rgba(255, 0, 255, 0.8),
+      0 0 15px rgba(255, 0, 255, 0.4);
+  }
+
+  .glow-cyan {
+    text-shadow:
+      0 0 5px rgba(0, 212, 255, 0.8),
+      0 0 15px rgba(0, 212, 255, 0.4);
+  }
+
+  /* --- Neon box glow (borders that actually glow) --- */
+  .glow-box {
+    box-shadow: var(--box-shadow-neon);
+  }
+
+  .glow-box-lg {
+    box-shadow: var(--box-shadow-neon-lg);
+  }
+
+  .glow-box-magenta {
+    box-shadow: var(--box-shadow-neon-secondary);
+  }
+
+  .glow-box-cyan {
+    box-shadow: var(--box-shadow-neon-tertiary);
+  }
+
+  /* --- HUD corners: 4 tech-bracket accents, no extra markup --- */
+  .hud {
+    position: relative;
+  }
+
+  .hud-corners {
+    position: relative;
+    background-image:
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon)),
+      linear-gradient(var(--neon), var(--neon));
+    background-repeat: no-repeat;
+    background-size: 18px 2px, 2px 18px, 18px 2px, 2px 18px, 18px 2px, 2px 18px, 18px 2px, 2px 18px;
+    background-position:
+      left top, left top,
+      right top, right top,
+      left bottom, left bottom,
+      right bottom, right bottom;
+  }
+
+  /* --- Terminal prompt prefix --- */
+  .terminal-prefix::before {
+    content: "> ";
+    color: var(--neon);
+    font-family: var(--font-accent);
+  }
+
+  .terminal-dollar::before {
+    content: "$ ";
+    color: var(--neon);
+    font-family: var(--font-accent);
+  }
+
+  /* --- Section label --- */
+  .section-label {
+    font-family: var(--font-accent);
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--neon);
+  }
+}
