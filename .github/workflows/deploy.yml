@@ -1,6 +1,6 @@
 # Deploy the Astro static site to GitHub Pages.
 #
-# Pipeline: checkout -> Node 20 -> best-effort data fetch -> withastro/action@v4
+# Pipeline: checkout -> Node 22 -> best-effort data fetch -> withastro/action@v4
 # (npm ci from lockfile + `npm run build`, which re-runs the fail-soft prebuild
 # fetch, then upload-pages-artifact of ./dist) -> deploy-pages.
 #
@@ -34,10 +34,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
 
       # Best-effort refresh of src/data/{repos,meta}.json before the build.
@@ -55,7 +55,7 @@ jobs:
       - name: Install, build, and upload site
         uses: withastro/action@v4
         with:
-          node-version: 20
+          node-version: 22
           package-manager: npm@latest
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
