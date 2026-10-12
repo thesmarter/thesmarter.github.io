@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-08T21:45:37.014Z",
+  "generated_at": "2026-10-12T08:18:46.183Z",
   "orgs": [
     {
       "login": "thesmarter",
@@ -500,6 +500,34 @@
       "install": null
     },
     {
+      "id": 327888810,
+      "slug": "thesmarter-thesmarter-github-io",
+      "org": "thesmarter",
+      "name": "thesmarter.github.io",
+      "full_name": "thesmarter/thesmarter.github.io",
+      "html_url": "https://github.com/thesmarter/thesmarter.github.io",
+      "description": null,
+      "description_en": "Organization portfolio site — Astro static showcase of all projects.",
+      "language": "Astro",
+      "stars": 0,
+      "forks_count": 0,
+      "open_issues": 0,
+      "topics": [],
+      "homepage": null,
+      "license": null,
+      "updated_at": "2026-10-08T21:56:31Z",
+      "pushed_at": "2026-10-08T21:56:28Z",
+      "fork": false,
+      "featured": false,
+      "featured_order": null,
+      "curated": true,
+      "category": "devops-infra",
+      "domains": [
+        "web"
+      ],
+      "install": null
+    },
+    {
       "id": 1408200850,
       "slug": "detaelectpro-leantime",
       "org": "DetaElectPro",
@@ -610,34 +638,6 @@
       "domains": [
         "web",
         "health"
-      ],
-      "install": null
-    },
-    {
-      "id": 327888810,
-      "slug": "thesmarter-thesmarter-github-io",
-      "org": "thesmarter",
-      "name": "thesmarter.github.io",
-      "full_name": "thesmarter/thesmarter.github.io",
-      "html_url": "https://github.com/thesmarter/thesmarter.github.io",
-      "description": null,
-      "description_en": "Organization portfolio site — Astro static showcase of all projects.",
-      "language": "HTML",
-      "stars": 0,
-      "forks_count": 0,
-      "open_issues": 0,
-      "topics": [],
-      "homepage": null,
-      "license": null,
-      "updated_at": "2024-12-02T12:06:02Z",
-      "pushed_at": "2026-10-08T21:22:40Z",
-      "fork": false,
-      "featured": false,
-      "featured_order": null,
-      "curated": true,
-      "category": "devops-infra",
-      "domains": [
-        "web"
       ],
       "install": null
     },

@@ -1,14 +1,16 @@
 {
-  "generated_at": "2026-10-08T21:51:15.584Z",
+  "generated_at": "2026-10-12T08:18:48.904Z",
   "totals": {
-    "releases": 1,
-    "assets": 3,
-    "total_downloads": 0,
+    "releases": 24,
+    "assets": 9,
+    "total_downloads": 57,
     "repos_checked": 40,
-    "repos_with_releases": 1
+    "repos_with_releases": 11
   },
   "byOrg": {
-    "thesmarter": 1
+    "thesmarter": 6,
+    "DetaElectPro": 12,
+    "AdaaSystem": 6
   },
   "byRepo": {
     "thesmarter/thesmarter.github.io": {
@@ -20,6 +22,106 @@
       "latest_published_at": "2026-10-08T21:22:40Z",
       "latest_slug": "thesmarter-thesmarter-github-io-v1-0",
       "latest_html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0"
+    },
+    "thesmarter/Tafqeet": {
+      "releases": 5,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "2.1",
+      "latest_name": "Php Tafqeet v2.1",
+      "latest_published_at": "2026-09-13T16:01:04Z",
+      "latest_slug": "thesmarter-tafqeet-2-1",
+      "latest_html_url": "https://github.com/thesmarter/Tafqeet/releases/tag/2.1"
+    },
+    "DetaElectPro/deta.sd": {
+      "releases": 2,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "v1.1",
+      "latest_name": "v1.1",
+      "latest_published_at": "2025-06-01T13:17:41Z",
+      "latest_slug": "detaelectpro-deta-sd-v1-1",
+      "latest_html_url": "https://github.com/DetaElectPro/deta.sd/releases/tag/v1.1"
+    },
+    "AdaaSystem/laravel-vue-i18n-generator": {
+      "releases": 3,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "1.2",
+      "latest_name": "V1.2 hot-fix",
+      "latest_published_at": "2022-09-04T20:28:59Z",
+      "latest_slug": "adaasystem-laravel-vue-i18n-generator-1-2",
+      "latest_html_url": "https://github.com/AdaaSystem/laravel-vue-i18n-generator/releases/tag/1.2"
+    },
+    "AdaaSystem/Service-Provider": {
+      "releases": 1,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "1",
+      "latest_name": "v1",
+      "latest_published_at": "2022-08-30T20:34:52Z",
+      "latest_slug": "adaasystem-service-provider-1",
+      "latest_html_url": "https://github.com/AdaaSystem/Service-Provider/releases/tag/1"
+    },
+    "AdaaSystem/laravel-auth-log": {
+      "releases": 2,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "1.1",
+      "latest_name": "1.1",
+      "latest_published_at": "2022-02-02T10:30:21Z",
+      "latest_slug": "adaasystem-laravel-auth-log-1-1",
+      "latest_html_url": "https://github.com/AdaaSystem/laravel-auth-log/releases/tag/1.1"
+    },
+    "DetaElectPro/hawjahSystem": {
+      "releases": 3,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "2.0.1",
+      "latest_name": "new release v2.0.1",
+      "latest_published_at": "2020-08-11T22:13:22Z",
+      "latest_slug": "detaelectpro-hawjahsystem-2-0-1",
+      "latest_html_url": "https://github.com/DetaElectPro/hawjahSystem/releases/tag/2.0.1"
+    },
+    "DetaElectPro/vitel-user": {
+      "releases": 4,
+      "assets": 5,
+      "downloads": 52,
+      "latest_tag": "2.3.0",
+      "latest_name": "new release v2.3.0",
+      "latest_published_at": "2020-05-02T12:41:22Z",
+      "latest_slug": "detaelectpro-vitel-user-2-3-0",
+      "latest_html_url": "https://github.com/DetaElectPro/vitel-user/releases/tag/2.3.0"
+    },
+    "DetaElectPro/vital-provider": {
+      "releases": 1,
+      "assets": 1,
+      "downloads": 5,
+      "latest_tag": "v1",
+      "latest_name": "Vital Provider",
+      "latest_published_at": "2020-04-04T19:43:11Z",
+      "latest_slug": "detaelectpro-vital-provider-v1",
+      "latest_html_url": "https://github.com/DetaElectPro/vital-provider/releases/tag/v1"
+    },
+    "DetaElectPro/accounting-js": {
+      "releases": 1,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "v5.0",
+      "latest_name": "accounting",
+      "latest_published_at": "2019-10-31T09:40:53Z",
+      "latest_slug": "detaelectpro-accounting-js-v5-0",
+      "latest_html_url": "https://github.com/DetaElectPro/accounting-js/releases/tag/v5.0"
+    },
+    "DetaElectPro/ZoolFlat": {
+      "releases": 1,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "1.0",
+      "latest_name": "ZoolFlat Full Admin Panel and Cms",
+      "latest_published_at": "2019-03-29T04:47:05Z",
+      "latest_slug": "detaelectpro-zoolflat-1-0",
+      "latest_html_url": "https://github.com/DetaElectPro/ZoolFlat/releases/tag/1.0"
     }
   },
   "latest": {
