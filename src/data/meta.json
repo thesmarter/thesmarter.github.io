@@ -1,19 +1,19 @@
 {
   "totals": {
     "orgs": 3,
-    "projects": 40,
+    "projects": 42,
     "featured": 8,
-    "curated": 35,
-    "stars": 28
+    "curated": 37,
+    "stars": 29
   },
   "byOrg": {
     "thesmarter": 11,
     "DetaElectPro": 21,
-    "AdaaSystem": 8
+    "AdaaSystem": 10
   },
   "byLang": {
     "Dart": 1,
-    "PHP": 10,
+    "PHP": 12,
     "TypeScript": 6,
     "Other": 14,
     "JavaScript": 4,

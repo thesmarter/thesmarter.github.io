@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-12T08:18:46.183Z",
+  "generated_at": "2026-10-19T07:07:51.995Z",
   "orgs": [
     {
       "login": "thesmarter",
@@ -11,7 +11,7 @@
       "login": "AdaaSystem",
       "html_url": "https://github.com/AdaaSystem",
       "avatar_url": "https://avatars.githubusercontent.com/u/76906938?v=4",
-      "repo_count": 8
+      "repo_count": 10
     },
     {
       "login": "DetaElectPro",
@@ -37,8 +37,8 @@
       "topics": [],
       "homepage": null,
       "license": null,
-      "updated_at": "2026-10-07T14:37:18Z",
-      "pushed_at": "2026-10-07T14:37:11Z",
+      "updated_at": "2026-10-15T07:55:31Z",
+      "pushed_at": "2026-10-15T07:55:26Z",
       "fork": true,
       "featured": true,
       "featured_order": 1,
@@ -325,6 +325,32 @@
       "install": null
     },
     {
+      "id": 1415801828,
+      "slug": "adaasystem-shipping",
+      "org": "AdaaSystem",
+      "name": "shipping",
+      "full_name": "AdaaSystem/shipping",
+      "html_url": "https://github.com/AdaaSystem/shipping",
+      "description": null,
+      "description_en": null,
+      "language": "PHP",
+      "stars": 1,
+      "forks_count": 0,
+      "open_issues": 1,
+      "topics": [],
+      "homepage": null,
+      "license": null,
+      "updated_at": "2026-10-13T14:46:49Z",
+      "pushed_at": "2026-10-13T14:29:20Z",
+      "fork": false,
+      "featured": false,
+      "featured_order": null,
+      "curated": true,
+      "category": null,
+      "domains": [],
+      "install": null
+    },
+    {
       "id": 532439356,
       "slug": "adaasystem-laravel-vue-i18n-generator",
       "org": "AdaaSystem",
@@ -515,8 +541,8 @@
       "topics": [],
       "homepage": null,
       "license": null,
-      "updated_at": "2026-10-08T21:56:31Z",
-      "pushed_at": "2026-10-08T21:56:28Z",
+      "updated_at": "2026-10-17T12:25:39Z",
+      "pushed_at": "2026-10-18T23:00:10Z",
       "fork": false,
       "featured": false,
       "featured_order": null,
@@ -525,6 +551,32 @@
       "domains": [
         "web"
       ],
+      "install": null
+    },
+    {
+      "id": 1415846369,
+      "slug": "adaasystem-shipping-filament",
+      "org": "AdaaSystem",
+      "name": "shipping-filament",
+      "full_name": "AdaaSystem/shipping-filament",
+      "html_url": "https://github.com/AdaaSystem/shipping-filament",
+      "description": null,
+      "description_en": null,
+      "language": "PHP",
+      "stars": 0,
+      "forks_count": 0,
+      "open_issues": 1,
+      "topics": [],
+      "homepage": null,
+      "license": null,
+      "updated_at": "2026-10-13T14:45:05Z",
+      "pushed_at": "2026-10-14T10:01:14Z",
+      "fork": false,
+      "featured": false,
+      "featured_order": null,
+      "curated": true,
+      "category": null,
+      "domains": [],
       "install": null
     },
     {

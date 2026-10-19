@@ -1,27 +1,47 @@
 {
-  "generated_at": "2026-10-12T08:18:48.904Z",
+  "generated_at": "2026-10-19T07:07:54.630Z",
   "totals": {
-    "releases": 24,
-    "assets": 9,
-    "total_downloads": 57,
-    "repos_checked": 40,
-    "repos_with_releases": 11
+    "releases": 31,
+    "assets": 10,
+    "total_downloads": 62,
+    "repos_checked": 42,
+    "repos_with_releases": 13
   },
   "byOrg": {
-    "thesmarter": 6,
-    "DetaElectPro": 12,
-    "AdaaSystem": 6
+    "thesmarter": 7,
+    "AdaaSystem": 12,
+    "DetaElectPro": 12
   },
   "byRepo": {
     "thesmarter/thesmarter.github.io": {
-      "releases": 1,
-      "assets": 3,
+      "releases": 2,
+      "assets": 4,
+      "downloads": 5,
+      "latest_tag": "v1.1",
+      "latest_name": "jobshub apk app",
+      "latest_published_at": "2026-10-18T23:00:10Z",
+      "latest_slug": "thesmarter-thesmarter-github-io-v1-1",
+      "latest_html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.1"
+    },
+    "AdaaSystem/shipping": {
+      "releases": 2,
+      "assets": 0,
       "downloads": 0,
-      "latest_tag": "v1.0",
-      "latest_name": "Tijara Apps",
-      "latest_published_at": "2026-10-08T21:22:40Z",
-      "latest_slug": "thesmarter-thesmarter-github-io-v1-0",
-      "latest_html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0"
+      "latest_tag": "v0.2.0",
+      "latest_name": "v0.2.0",
+      "latest_published_at": "2026-10-13T14:29:34Z",
+      "latest_slug": "adaasystem-shipping-v0-2-0",
+      "latest_html_url": "https://github.com/AdaaSystem/shipping/releases/tag/v0.2.0"
+    },
+    "AdaaSystem/shipping-filament": {
+      "releases": 4,
+      "assets": 0,
+      "downloads": 0,
+      "latest_tag": "v0.3.0",
+      "latest_name": "v0.3.0",
+      "latest_published_at": "2026-10-13T14:13:29Z",
+      "latest_slug": "adaasystem-shipping-filament-v0-3-0",
+      "latest_html_url": "https://github.com/AdaaSystem/shipping-filament/releases/tag/v0.3.0"
     },
     "thesmarter/Tafqeet": {
       "releases": 5,
@@ -125,11 +145,11 @@
     }
   },
   "latest": {
-    "slug": "thesmarter-thesmarter-github-io-v1-0",
+    "slug": "thesmarter-thesmarter-github-io-v1-1",
     "full_name": "thesmarter/thesmarter.github.io",
-    "tag_name": "v1.0",
-    "name": "Tijara Apps",
-    "html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.0",
-    "published_at": "2026-10-08T21:22:40Z"
+    "tag_name": "v1.1",
+    "name": "jobshub apk app",
+    "html_url": "https://github.com/thesmarter/thesmarter.github.io/releases/tag/v1.1",
+    "published_at": "2026-10-18T23:00:10Z"
   }
 }
