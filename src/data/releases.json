@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-19T07:07:54.630Z",
+  "generated_at": "2026-10-26T07:14:34.403Z",
   "totals": {
     "releases": 31,
     "assets": 10,
-    "total_downloads": 62
+    "total_downloads": 66
   },
   "releases": [
     {
@@ -34,7 +34,7 @@
           "label": null,
           "content_type": "application/vnd.android.package-archive",
           "size": 8090169,
-          "download_count": 5,
+          "download_count": 8,
           "digest": "sha256:18a1478d590566b9d8be541983d0480d646d62b268f09ced0deb93ef1ba9a610",
           "browser_download_url": "https://github.com/thesmarter/thesmarter.github.io/releases/download/v1.1/JOBSHUB-1.0.1-2.apk",
           "created_at": "2026-10-18T22:58:57Z"
@@ -207,7 +207,7 @@
           "label": null,
           "content_type": "application/vnd.android.package-archive",
           "size": 101510612,
-          "download_count": 0,
+          "download_count": 1,
           "digest": "sha256:4513c867d244dd275463c7182e333c15c0c75135e63703aebd264c4709cf7ffa",
           "browser_download_url": "https://github.com/thesmarter/thesmarter.github.io/releases/download/v1.0/Tijara-Customer.apk",
           "created_at": "2026-10-08T21:08:13Z"
