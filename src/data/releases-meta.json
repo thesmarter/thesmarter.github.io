@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-11-02T08:38:30.512Z",
+  "generated_at": "2026-11-09T08:52:56.137Z",
   "totals": {
     "releases": 31,
     "assets": 10,
-    "total_downloads": 66,
-    "repos_checked": 42,
+    "total_downloads": 77,
+    "repos_checked": 48,
     "repos_with_releases": 13
   },
   "byOrg": {
@@ -16,7 +16,7 @@
     "thesmarter/thesmarter.github.io": {
       "releases": 2,
       "assets": 4,
-      "downloads": 9,
+      "downloads": 20,
       "latest_tag": "v1.1",
       "latest_name": "jobshub apk app",
       "latest_published_at": "2026-10-18T23:00:10Z",
